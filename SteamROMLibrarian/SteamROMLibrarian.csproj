@@ -8,6 +8,7 @@
     <StartupObject>SteamROMLibrarian.Program</StartupObject>
     <Title>Steam ROM Librarian</Title>
     <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+    <AssemblyName>librarian</AssemblyName>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -23,6 +24,16 @@
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Crc32.NET" Version="1.2.0" />
+    <PackageReference Include="Indieteur.SteamAppsManAndVDFAPI" Version="1.0.3" />
+    <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SteamAppInfoParser\AppInfoParser.csproj" />
   </ItemGroup>
 
 </Project>
