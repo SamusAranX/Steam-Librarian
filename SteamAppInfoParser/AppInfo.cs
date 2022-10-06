@@ -1,7 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using ValveKeyValue;
 
-namespace AppInfoParser
+namespace VDFLib
 {
 	public class AppInfo
 	{
@@ -65,7 +65,7 @@ namespace AppInfoParser
 			while (true);
 		}
 
-		public static DateTime DateTimeFromUnixTime(uint unixTime)
+		private static DateTime DateTimeFromUnixTime(uint unixTime)
 		{
 			return new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc).AddSeconds(unixTime);
 		}

@@ -1,7 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using ValveKeyValue;
 
-namespace AppInfoParser
+namespace VDFLib
 {
 	class PackageInfo
 	{

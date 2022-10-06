@@ -1,4 +1,4 @@
-﻿namespace AppInfoParser
+﻿namespace VDFLib
 {
 	public enum EUniverse
 	{
