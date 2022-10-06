@@ -5,7 +5,7 @@ VisualStudioVersion = 17.3.32804.467
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SteamROMLibrarian", "SteamROMLibrarian\SteamROMLibrarian.csproj", "{EC059152-DD3D-45CC-9BBB-CF29BF62758A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AppInfoParser", "SteamAppInfoParser\AppInfoParser.csproj", "{D3E7F10E-F6FB-4CDE-AAAB-0664ABA9394C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VDFLib", "SteamAppInfoParser\VDFLib.csproj", "{D3E7F10E-F6FB-4CDE-AAAB-0664ABA9394C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

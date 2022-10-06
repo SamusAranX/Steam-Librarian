@@ -1,4 +1,5 @@
-﻿using AppInfoParser;
+﻿using System.Text.Json;
+using SteamROMLibrarian.Serialization;
 
 namespace SteamROMLibrarian
 {
@@ -37,27 +38,37 @@ namespace SteamROMLibrarian
 			return (steamLocation, userIDFolder);
 		}
 
-		public static void ReadLibrary(string? steamUserID, string libraryPath)
+		public static void PrepareLibrary(string? steamUserID, string libraryPath, bool overwriteLibraryFile)
 		{
 			var (steamLocation, userIDFolder) = Preflight(steamUserID);
+			var shortcutsPath = Path.Join(userIDFolder, "config", "shortcuts.vdf");
 
-			var appInfo = new AppInfo();
-			appInfo.Read(Path.Join(steamLocation, "appcache", "appinfo.vdf"));
+			// var shortcutsPath = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "shortcuts.vdf");
+			var shortcuts2Path = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "shortcuts.vdf");
 
-			var appList = appInfo.Apps.FindAll(app => Directory.Exists(Path.Join(userIDFolder, app.AppID.ToString())));
+			//if (File.Exists(libraryPath) && !overwriteLibraryFile)
+			//{
+			//	Console.WriteLine("The library JSON file already exists. Please specify --overwrite if you really intended to regenerate it.");
+			//	return;
+			//}
 
-			Console.WriteLine($"{appList.Count} apps");
-			Console.WriteLine("-----");
+			var library = new GameLibrary();
+			var shortcuts = new ShortcutsVDF(shortcutsPath);
 
-			foreach (var app in appList)
+			library.LeaveUntouched.AddRange(shortcuts);
+
+			shortcuts.Save(shortcuts2Path);
+
+			foreach (var shortcut in shortcuts)
 			{
-				//var userdataFolder = Path.Join(steamLocation, "userdata", steamUserID, app.AppID.ToString());
-
-				Console.WriteLine(app.AppID);
-
-				//Console.WriteLine(app.Data);
-				//Console.WriteLine("-----");
+				library.LeaveUntouched.Add(shortcut);
+				var appID = shortcut.AppID.ToString();
+				var exe = shortcut.Exe!;
+				var appName = shortcut.AppName!;
+				Console.WriteLine($"{appID}: {appName} -> {exe}");
 			}
+
+			//library.Serialize(libraryPath);
 		}
 
 		public static void WriteLibrary(string? steamUserID, string libraryPath)
@@ -65,7 +76,24 @@ namespace SteamROMLibrarian
 			var (steamLocation, userIDFolder) = Preflight(steamUserID);
 
 			// TODO: add the actual library writing part
-			throw new NotImplementedException("not yet");
+
+			var library = GameLibrary.Deserialize(libraryPath);
+
+			// all ROMEntry objects in the library now have AppIDs
+
+			// write library back to the JSON file so new AppIDs are persisted
+			library.Serialize(libraryPath);
+		}
+
+		public static void WriteExampleLibrary(string libraryPath)
+		{
+			var exampleLibrary = GameLibrary.ExampleLibrary;
+			var exampleLibraryPath = Path.Join(Path.GetDirectoryName(libraryPath), "libraryExample.json");
+
+			using (var fs = File.OpenWrite(exampleLibraryPath))
+			{
+				JsonSerializer.Serialize(fs, exampleLibrary, JSON.Options);
+			}
 		}
 	}
 }

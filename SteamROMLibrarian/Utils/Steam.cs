@@ -17,10 +17,12 @@ namespace SteamROMLibrarian.Utils
 				          RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64)
 					          .OpenSubKey("SOFTWARE\\Valve\\Steam");
 
-				if (key?.GetValue("SteamPath") is string steamPath)
+				if (key?.GetValue("SteamPath") is string steamPath && Directory.Exists(Path.Join(steamPath, "appcache")))
 				{
 					return steamPath;
 				}
+
+				throw new SteamPathNotFoundException("Can't find Steam path");
 			}
 			else if (isLinux || isMac)
 			{
@@ -31,7 +33,7 @@ namespace SteamROMLibrarian.Utils
 
 				return paths
 					.Select(path => Path.Join(home, path))
-					.FirstOrDefault(steamPath => Directory.Exists(Path.Join(steamPath, "appcache"))) ?? throw new SteamPathNotFoundException("Can't find Steam path");
+					.FirstOrDefault(steamPath => Directory.Exists(Path.Join(steamPath, "appcache")), null) ?? throw new SteamPathNotFoundException("Can't find Steam path");
 			}
 
 			throw new PlatformNotSupportedException();
