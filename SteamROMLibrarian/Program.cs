@@ -1,7 +1,5 @@
 ﻿using System.CommandLine;
 using System.Text;
-using SteamKit2.Internal;
-using SteamROMLibrarian.Utils;
 
 namespace SteamROMLibrarian;
 
@@ -10,16 +8,6 @@ internal class Program
 	private static int Main(string[] args)
 	{
 		Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-
-		//for (uint i = 0; i < uint.MaxValue; i++)
-		//{
-		//	var str = KV.GetIntString(i);
-		//	Console.WriteLine(str);
-		//}
-
-
-		//return 0;
-
 		Console.OutputEncoding = Encoding.UTF8;
 
 		var root = new RootCommand();
@@ -60,7 +48,7 @@ internal class Program
 		writeCommand.AddOption(userIDOption);
 		root.Add(writeCommand);
 
-		var writeExampleCommand = new Command("write-example", "Writes example library JSON to the directory given in --library.");
+		var writeExampleCommand = new Command("write-example", "Outputs an example library JSON file.");
 		root.Add(writeExampleCommand);
 
 		prepareCommand.SetHandler(Librarian.PrepareLibrary, userIDOption, libraryPathOption, overwriteOption);

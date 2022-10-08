@@ -1,5 +1,7 @@
-﻿using System.Text.Json;
+﻿using System.Text;
+using System.Text.Json;
 using System.Text.Json.Serialization;
+using ValveKeyValue;
 
 namespace SteamROMLibrarian.Serialization
 {
@@ -30,21 +32,41 @@ namespace SteamROMLibrarian.Serialization
 	}
 
 	[Serializable]
-	internal class ROMEntry: IJsonOnDeserialized
+	internal class SteamMetadata
 	{
 		public string? AppID { get; set; }
+
+		public string? BPMAppID { get; set; }
+
+		[JsonIgnore]
+		public int LastPlayTimeUnix { get; set; }
+
+		public DateTime LastPlayTime
+		{
+			get => new DateTime(1970, 1, 1).ToLocalTime().AddSeconds(this.LastPlayTimeUnix);
+			set => this.LastPlayTimeUnix = (int)((DateTimeOffset)value).ToUnixTimeSeconds();
+		}
+	}
+
+	[Serializable]
+	internal class ROMEntry : IJsonOnDeserialized
+	{
 		public string? Launcher { get; set; }
 		public string Name { get; set; }
 		public string? Path { get; set; }
+		public bool VR { get; set; }
 		public string? Grid { get; set; }
 		public string? Poster { get; set; }
 		public string? Hero { get; set; }
 		public string? Logo { get; set; }
 		public string? Icon { get; set; }
-		
+
+		[JsonPropertyName("steamMetadataDoNotEdit")]
+		public SteamMetadata Metadata { get; set; } = new();
+
 		public void OnDeserialized()
 		{
-			this.RegenerateAppID();
+			this.GenerateAppID();
 		}
 
 		[JsonConstructor]
@@ -53,7 +75,12 @@ namespace SteamROMLibrarian.Serialization
 			this.Name = name;
 			this.Path = path;
 
-			this.RegenerateAppID();
+			// even though this constructor says [JSONConstructor] on it,
+			// the separate OnDeserialized() is necessary because when deserializing
+			// from JSON, this constructor doesn't seem to be called at all.
+			// this makes no sense. thanks, microsoft
+
+			this.GenerateAppID();
 		}
 
 		public ROMEntry(string name, string path, string launcher) : this(name, path)
@@ -61,9 +88,26 @@ namespace SteamROMLibrarian.Serialization
 			this.Launcher = launcher;
 		}
 
-		private void RegenerateAppID()
+		private void GenerateAppID()
 		{
-			this.AppID = Utils.AppID.GenerateGridAppID(this.Path ?? "", this.Name);
+			if (this.Metadata.AppID == null)
+				this.Metadata.AppID = Utils.AppID.GenerateAppID(this.Path ?? "", this.Name);
+
+			if (this.Metadata.BPMAppID == null)
+				this.Metadata.BPMAppID = Utils.AppID.GenerateLegacyAppID(this.Path ?? "", this.Name);
+		}
+	}
+
+	[Serializable]
+	internal class ShortcutPointer
+	{
+		public string AppID { get; set; }
+		public string AppName { get; set; }
+
+		public ShortcutPointer(string appID, string appName)
+		{
+			this.AppID = appID;
+			this.AppName = appName;
 		}
 	}
 
@@ -77,25 +121,79 @@ namespace SteamROMLibrarian.Serialization
 		public Dictionary<string, Category> Categories { get; set; }
 
 		// list of serialized Shortcut entries for preexisting non-ROM non-Steam entries (e.g. Fallout 4 launched via F4SE)
-		public List<Shortcut> LeaveUntouched { get; set; }
-		
+		public List<ShortcutPointer> PreexistingShortcuts { get; set; }
+
 		public GameLibrary()
 		{
 			this.Launchers = new Dictionary<string, ROMLauncher>();
 			this.Categories = new Dictionary<string, Category>();
-			this.LeaveUntouched = new List<Shortcut>();
+			this.PreexistingShortcuts = new List<ShortcutPointer>();
 		}
 
-		public static GameLibrary Deserialize(string libraryFile)
+		public static GameLibrary Load(string libraryPath)
 		{
-			using var fs = File.OpenRead(libraryFile);
-			return JsonSerializer.Deserialize<GameLibrary>(fs, JSON.Options);
+			using var fs = File.OpenRead(libraryPath);
+			var library = JsonSerializer.Deserialize<GameLibrary>(fs, JSON.Options);
+
+			if (library == null)
+				throw new InvalidLibraryException($"Can't load library from ${libraryPath}!");
+
+			return library;
 		}
 
-		public void Serialize(string libraryFile)
+		public string ToJSON()
 		{
-			using var fs = File.OpenWrite(libraryFile);
-			JsonSerializer.Serialize(fs, this, JSON.Options);
+			var jsonString = JsonSerializer.Serialize(this, JSON.Options);
+			using var sr = new StringReader(jsonString);
+			var sb = new StringBuilder();
+
+			while (sr.ReadLine() is { } line)
+			{
+				// filter out lines with empty string values
+				if (line.EndsWith(": \"\","))
+					continue;
+
+				sb.AppendLine(line);
+			}
+
+			return sb.ToString();
+		}
+
+		public void Save(string libraryPath)
+		{
+			using var fs = File.Open(libraryPath, FileMode.Create);
+			using var sw = new StreamWriter(fs);
+			sw.Write(this.ToJSON());
+		}
+
+		public ROMEntry? GetByID(string appID)
+		{
+			foreach (var (_, category) in this.Categories)
+			{
+				foreach (var entry in category.Entries)
+				{
+					if (entry.Metadata.AppID == appID)
+						return entry;
+				}
+			}
+
+			return null;
+		}
+
+		public bool Contains(string appID)
+		{
+			return this.GetByID(appID) != null;
+		}
+
+		public bool ContainsPreexisting(string appID)
+		{
+			foreach (var sp in this.PreexistingShortcuts)
+			{
+				if (sp.AppID == appID)
+					return true;
+			}
+			
+			return false;
 		}
 
 		public static GameLibrary ExampleLibrary =>
@@ -104,6 +202,8 @@ namespace SteamROMLibrarian.Serialization
 				Launchers = new Dictionary<string, ROMLauncher>
 				{
 					{ "dreamcast", new ROMLauncher("/usr/bin/flatpak", "run org.flycast.Flycast") },
+					{ "mgba", new ROMLauncher("/usr/bin/flatpak", "run io.mgba.mGBA -f") },
+					{ "sameboy", new ROMLauncher("/usr/bin/flatpak", "run io.github.sameboy.SameBoy -f") },
 					{ "dolphin", new ROMLauncher("/usr/bin/flatpak", "run org.DolphinEmu.dolphin-emu -b -e") },
 				},
 				Categories = new Dictionary<string, Category>
@@ -111,7 +211,21 @@ namespace SteamROMLibrarian.Serialization
 					{
 						"Dreamcast", new Category("dreamcast", new List<ROMEntry>
 							{
-								new("Dreamcast BIOS", "Dreamcast BIOS"),
+								new("Dreamcast BIOS", "Dreamcast BIOS")
+								{
+									Metadata =
+									{
+										LastPlayTimeUnix = 1665162720, // 2022-10-07T18:12:00+02:00
+									},
+								},
+							}
+						)
+					},
+					{
+						"GB/GBA", new Category("mgba", new List<ROMEntry>
+							{
+								new("Test Cartridge", "/run/media/mmcblk0p1/roms/gba/Jayro's Test Cartridge v1.15.gba"),
+								new("LSDj", "/run/media/mmcblk0p1/roms/gb/lsdj9_2_L.gb", "sameboy"),
 							}
 						)
 					},
@@ -130,15 +244,9 @@ namespace SteamROMLibrarian.Serialization
 						)
 					},
 				},
-				LeaveUntouched = new List<Shortcut>
+				PreexistingShortcuts = new List<ShortcutPointer>
 				{
-					new()
-					{
-						AppID = 1234567890,
-						AppName = "Fallout 4 (F4SE)",
-						Exe = "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Fallout 4\\f4se_loader.exe",
-						StartDir = "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Fallout 4\\",
-					},
+					new("1234567890", "Example"),
 				},
 			};
 	}
