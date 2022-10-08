@@ -1,116 +1,124 @@
 ﻿using System.Collections;
-using System.Text.Json;
-using SteamKit2;
-using SteamROMLibrarian.Utils;
+using System.Reflection.Metadata.Ecma335;
+using System.Text.Json.Serialization;
+using ValveKeyValue;
 
 namespace SteamROMLibrarian.Serialization
 {
 	[Serializable]
 	internal class Shortcut
 	{
-		public uint AppID { get; set; }
-		public string? AppName { get; set; }
-		public string? Exe { get; set; }
-		public string? StartDir { get; set; }
-		public string? Icon { get; set; }
-		public string? ShortcutPath { get; set; }
-		public string? LaunchOptions { get; set; }
+		[KVProperty("appid")]
+		[JsonIgnore]
+		public int AppIDInt { get; set; }
+
+		[JsonPropertyName("AppID")]
+		[KVIgnore]
+		public uint AppID
+		{
+			get => (uint)this.AppIDInt;
+			set => this.AppIDInt = (int)value;
+		}
+
+		public string AppName { get; set; } = "";
+
+		private string _exe = "";
+		private string _startDir = "";
+		private string? _icon;
+
+		public string Exe
+		{
+			get => this._exe;
+			set
+			{
+				if (!value.IsQuoted())
+					value = value.ToQuotedString();
+
+				this._exe = value;
+			}
+		}
+
+		public string StartDir
+		{
+			get => this._startDir;
+			set
+			{
+				if (!value.IsQuoted())
+					value = value.ToQuotedString();
+
+				this._startDir = value;
+			}
+		}
+
+		[KVProperty("icon")]
+		public string? Icon
+		{
+			get => this._icon;
+			set
+			{
+				if (value != null && !value.IsQuoted())
+					value = value.ToQuotedString();
+
+				this._icon = value;
+			}
+		}
+
+		public string ShortcutPath { get; set; }
+		public string LaunchOptions { get; set; }
 		public bool IsHidden { get; set; }
 		public bool AllowDesktopConfig { get; set; } = true;
 		public bool AllowOverlay { get; set; } = true;
 		public bool OpenVR { get; set; }
 		public bool Devkit { get; set; }
-		public uint DevkitGameID { get; set; }
-		public uint DevkitOverrideAppID { get; set; }
-		public DateTime? LastPlayTime { get; set; }
-		public string? FlatpakAppID { get; set; }
-		public List<string>? Tags { get; set; }
+		public string DevkitGameID { get; set; }
+		public int DevkitOverrideAppID { get; set; }
 
-		public Shortcut()
+		[KVProperty("LastPlayTime")]
+		public int LastPlayTimeUnix { get; set; }
+
+		[KVIgnore]
+		[JsonIgnore]
+		public DateTime LastPlayTime
 		{
-			this.Tags = new List<string>();
+			get => new DateTime(1970, 1, 1).ToLocalTime().AddSeconds(this.LastPlayTimeUnix);
+			set => this.LastPlayTimeUnix = (int)((DateTimeOffset)value).ToUnixTimeSeconds();
 		}
 
-		public Shortcut(KeyValue kv)
+		public string FlatpakAppID { get; set; } = "";
+
+		[KVProperty("tags")]
+		public List<string> Tags { get; set; } = new();
+
+		public KVObject ToKVObject(int index)
 		{
-			this.AppID = (uint)kv["appid"].AsInteger();
-			this.AppName = kv["AppName"].AsString();
-			this.Exe = kv["Exe"].AsString();
-			this.StartDir = kv["StartDir"].AsString();
-			this.Icon = kv["icon"].AsString();
-
-			if (kv["ShortcutPath"].AsString() != "")
-				this.ShortcutPath = kv["ShortcutPath"].AsString();
-
-			if (kv["LaunchOptions"].AsString() != "")
-				this.LaunchOptions = kv["LaunchOptions"].AsString();
-
-			this.IsHidden = kv["IsHidden"].AsBoolean();
-			this.AllowDesktopConfig = kv["AllowDesktopConfig"].AsBoolean();
-			this.AllowOverlay = kv["AllowOverlay"].AsBoolean();
-			this.OpenVR = kv["OpenVR"].AsBoolean();
-			this.Devkit = kv["Devkit"].AsBoolean();
-			this.DevkitGameID = kv["DevkitGameID"].AsUnsignedInteger();
-			this.DevkitOverrideAppID = kv["DevkitOverrideAppID"].AsUnsignedInteger();
-
-			if (kv["LastPlayTime"].AsUnsignedInteger() != 0)
-				this.LastPlayTime = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddSeconds(kv["LastPlayTime"].AsUnsignedInteger());
-
-			if (kv["FlatpakAppID"].AsString() != "")
-				this.FlatpakAppID = kv["FlatpakAppID"].AsString();
-
-			if (kv["tags"].Children.Count > 0)
+			var kv = new KVObject(index.ToString(), Array.Empty<KVObject>())
 			{
-				var tempTags = new string[kv["tags"].Children.Count];
-				foreach (var kvTag in kv["tags"].Children)
-				{
-					// if any of these are null, we might as well crash
-					var index = uint.Parse(kvTag.Name!);
-					tempTags[index] = kvTag.AsString()!;
-				}
+				["appid"] = this.AppIDInt,
+				["AppName"] = this.AppName,
+				["Exe"] = this.Exe,
+				["StartDir"] = this.StartDir,
+				["icon"] = this.Icon ?? "",
+				["ShortcutPath"] = this.ShortcutPath ?? "",
+				["LaunchOptions"] = this.LaunchOptions ?? "",
+				["IsHidden"] = this.IsHidden ? 1 : 0,
+				["AllowDesktopConfig"] = this.AllowDesktopConfig ? 1 : 0,
+				["AllowOverlay"] = this.AllowOverlay ? 1 : 0,
+				["OpenVR"] = this.OpenVR ? 1 : 0,
+				["Devkit"] = this.Devkit ? 1 : 0,
+				["DevkitGameID"] = this.DevkitGameID ?? "",
+				["DevkitOverrideAppID"] = this.DevkitOverrideAppID,
+				["LastPlayTime"] = this.LastPlayTimeUnix,
+				["FlatpakAppID"] = this.FlatpakAppID,
+			};
 
-				this.Tags = tempTags.ToList();
-			}
-		}
-
-		public KeyValue ToKeyValue(int index)
-		{
-			var kv = new KeyValue(index.ToString());
-
-			// TODO: figure out how to encode integers
-			// TODO: make keys other than appid use the Value = syntax
-
-			kv["appid"] = new KeyValue { Value = KV.GetIntString(this.AppID) };
-			kv["AppName"].Value = this.AppName;
-			kv["Exe"].Value = this.Exe;
-			kv["StartDir"].Value = this.StartDir;
-			kv["icon"].Value = this.Icon;
-			kv["ShortcutPath"].Value = this.ShortcutPath;
-			kv["LaunchOptions"].Value = this.LaunchOptions;
-			kv["IsHidden"].Value = KV.GetIntString(this.IsHidden ? 1 : 0);
-			kv["AllowDesktopConfig"].Value = KV.GetIntString(this.AllowDesktopConfig ? 1 : 0);
-			kv["AllowOverlay"].Value = KV.GetIntString(this.AllowOverlay ? 1 : 0);
-			kv["OpenVR"].Value = KV.GetIntString(this.OpenVR ? 1 : 0);
-			kv["Devkit"].Value = KV.GetIntString(this.Devkit ? 1 : 0);
-			kv["DevkitGameID"].Value = KV.GetIntString(this.DevkitGameID);
-			kv["DevkitOverrideAppID"].Value = KV.GetIntString(this.DevkitOverrideAppID);
-
-			if (this.LastPlayTime != null)
-				kv["LastPlayTime"].Value = KV.GetIntString((uint)((DateTimeOffset)this.LastPlayTime).ToUnixTimeSeconds());
-			else
-				kv["LastPlayTime"].Value = KV.GetIntString(0);
-
-			kv["FlatpakAppID"].Value = this.FlatpakAppID;
-
-			if (this.Tags != null)
+			var tagsList = new List<KVObject>();
+			for (var i = 0; i < this.Tags.Count; i++)
 			{
-				kv["tags"] = new KeyValue();
-				for (var i = 0; i < this.Tags.Count; i++)
-				{
-					var kvTag = new KeyValue(i.ToString(), this.Tags[i]);
-					kv["tags"].Children.Add(kvTag);
-				}
+				var kvTag = new KVObject(i.ToString(), this.Tags[i]);
+				tagsList.Add(kvTag);
 			}
+
+			kv.Add(new KVObject("tags", tagsList));
 
 			return kv;
 		}
@@ -124,7 +132,8 @@ namespace SteamROMLibrarian.Serialization
 	[Serializable]
 	internal class ShortcutsVDF : IEnumerable<Shortcut>
 	{
-		public List<Shortcut> Shortcuts { get; set; }
+		[KVProperty("shortcuts")]
+		public List<Shortcut> Shortcuts { get; set; } = new();
 
 		#region IEnumerable
 
@@ -140,40 +149,59 @@ namespace SteamROMLibrarian.Serialization
 
 		#endregion
 
-		public ShortcutsVDF(string filename)
+		public Shortcut? GetByID(string appID)
 		{
-			if (!KeyValue.TryLoadAsBinary(filename, out var shortcuts))
+			foreach (var s in this)
 			{
-				throw new InvalidVDFException("Couldn't load shortcuts.vdf");
+				if (appID == s.AppID.ToString())
+					return s;
 			}
 
-			Console.WriteLine(shortcuts);
+			return null;
+		}
 
-			var tempShortcuts = new Shortcut[shortcuts.Children.Count];
-			foreach (var kv in shortcuts.Children)
+		public bool Contains(string appID)
+		{
+			return this.GetByID(appID) != null;
+		}
+
+		public static ShortcutsVDF Load(string filename)
+		{
+			using var fs = File.OpenRead(filename);
+			var kv = KVSerializer.Create(KVSerializationFormat.KeyValues1Binary);
+
+			try
 			{
-				var index = uint.Parse(kv.Name!); // kv.Name should never be null in this case. Might as well crash here.
-				tempShortcuts[index] = new Shortcut(kv);
+				var kvObject = kv.Deserialize<List<Shortcut>>(fs);
+				var vdf = new ShortcutsVDF
+				{
+					Shortcuts = kvObject,
+				};
+				return vdf;
+			}
+			catch (Exception)
+			{
+				throw new InvalidVDFException($"Can't load shortcuts from {filename}!");
+			}
+		}
+
+		private KVObject ToKVObject()
+		{
+			var kvList = new List<KVObject>();
+			for (var i = 0; i < this.Shortcuts.Count; i++)
+			{
+				var shortcut = this.Shortcuts[i];
+				kvList.Add(shortcut.ToKVObject(i));
 			}
 
-			this.Shortcuts = tempShortcuts.ToList();
+			return new KVObject("shortcuts", kvList);
 		}
 
 		public void Save(string filename)
 		{
-			var kv = new KeyValue("shortcuts");
-			for (int i = 0; i < this.Shortcuts.Count; i++)
-			{
-				var shortcut = this.Shortcuts[i];
-				kv.Children.Add(shortcut.ToKeyValue(i));
-			}
-
-			kv.SaveToFile(filename, true);
-		}
-
-		public string ToJSONString()
-		{
-			return JsonSerializer.Serialize(this, JSON.Options);
+			using var fs = File.Open(filename, FileMode.Create);
+			var kv = KVSerializer.Create(KVSerializationFormat.KeyValues1Binary);
+			kv.Serialize(fs, this.ToKVObject());
 		}
 	}
 }

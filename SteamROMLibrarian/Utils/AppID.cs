@@ -10,19 +10,21 @@ namespace SteamROMLibrarian.Utils
 		private const ulong SHC = 0x1_0000_0000; // constant that's subtracted to get the shortcut ID
 		private const ulong B32 = 0xFFFF_FFFF;
 
-		public static string GenerateGridAppID(string exe, string appName)
-		{
-			var nameTargetBytes = Encoding.UTF8.GetBytes(exe + appName);
-			var crc = Crc32Algorithm.Compute(nameTargetBytes);
-			var gameId = crc | 0x80000000;
+		private static readonly Encoding UTF8 = Encoding.UTF8;
 
-			return gameId.ToString();
-		}
+		//public static string GenerateGridAppID(string exe, string appName)
+		//{
+		//	var nameTargetBytes = UTF8.GetBytes(exe + appName);
+		//	var crc = Crc32Algorithm.Compute(nameTargetBytes);
+		//	var gameId = crc | TOP;
+
+		//	return gameId.ToString();
+		//}
 
 		private static ulong GenerateAppIDInt(string exe, string appName)
 		{
 			var key = exe + appName;
-			var id = Crc32Algorithm.Compute(Encoding.UTF8.GetBytes(key)) | TOP;
+			var id = Crc32Algorithm.Compute(UTF8.GetBytes(key)) | TOP;
 			return id << 32 | BPM;
 		}
 
