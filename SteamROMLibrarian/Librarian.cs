@@ -23,7 +23,8 @@ namespace SteamROMLibrarian
 						steamUserID = steamUserIDs[0];
 						break;
 					default:
-						// TODO: add selection menu
+						// TODO: actively refuse to continue in this case.
+						// this is what --user-id is for
 						steamUserID = steamUserIDs[0];
 						break;
 				}

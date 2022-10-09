@@ -18,9 +18,9 @@ internal class Program
 
 		var libraryPathOption = new Option<string>(
 			name: "--library",
-			description: "The path to the library JSON file.",
-			getDefaultValue: () => "library.json"
+			description: "The path to the library JSON file."
 		);
+		libraryPathOption.IsRequired = true;
 		libraryPathOption.AddAlias("-l");
 		root.AddGlobalOption(libraryPathOption);
 
