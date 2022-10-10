@@ -72,7 +72,7 @@ namespace SteamROMLibrarian
 			var (steamLocation, userIDFolder) = Preflight(steamUserID);
 			var steamShortcutsPath = Path.Join(userIDFolder, "config", "shortcuts.vdf");
 			var steamShortcutsBackupPath = Path.Join(userIDFolder, "config", "shortcuts.bak");
-			var steamShortcutsPathDebug = Path.Join(userIDFolder, "config", "shortcutsDebug.vdf");
+			//var steamShortcutsPathDebug = Path.Join(userIDFolder, "config", "shortcutsDebug.vdf");
 			var steamGridPath = Path.Join(userIDFolder, "config", "grid");
 			var libraryDir = Path.GetDirectoryName(libraryPath);
 
@@ -246,8 +246,8 @@ namespace SteamROMLibrarian
 			File.Copy(steamShortcutsPath, steamShortcutsBackupPath, true);
 			Console.WriteLine("Backup created.");
 
-			Console.WriteLine($"Writing library to {steamShortcutsPathDebug}");
-			newShortcutsVDF.Save(steamShortcutsPathDebug);
+			Console.WriteLine($"Writing library to {steamShortcutsPath}");
+			newShortcutsVDF.Save(steamShortcutsPath);
 			Console.WriteLine("Library written.");
 
 			Console.WriteLine("Restart Steam to reload your changes.");
