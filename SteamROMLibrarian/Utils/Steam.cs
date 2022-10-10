@@ -42,8 +42,16 @@ namespace SteamROMLibrarian.Utils
 		public static string[] GetSteamUserIDs()
 		{
 			var steamPath = GetSteamPath();
-			var userIDFolders = Directory.EnumerateDirectories(Path.Join(steamPath, "userdata")).ToArray();
-			return userIDFolders.Select(x => new DirectoryInfo(x).Name).ToArray();
+			try
+			{
+				var userIDFolders = Directory.EnumerateDirectories(Path.Join(steamPath, "userdata")).ToArray();
+				return userIDFolders.Select(x => new DirectoryInfo(x).Name).ToArray();
+			}
+			catch (Exception)
+			{
+				return Array.Empty<string>();
+			}
+
 		}
 	}
 }

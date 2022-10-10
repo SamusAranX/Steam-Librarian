@@ -1,7 +1,7 @@
 ﻿using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using ValveKeyValue;
+using SteamROMLibrarian.Utils;
 
 namespace SteamROMLibrarian.Serialization
 {
@@ -90,11 +90,9 @@ namespace SteamROMLibrarian.Serialization
 
 		private void GenerateAppID()
 		{
-			if (this.Metadata.AppID == null)
-				this.Metadata.AppID = Utils.AppID.GenerateAppID(this.Path ?? "", this.Name);
-
-			if (this.Metadata.BPMAppID == null)
-				this.Metadata.BPMAppID = Utils.AppID.GenerateLegacyAppID(this.Path ?? "", this.Name);
+			var appID = new AppID(this.Path ?? "", this.Name);
+			this.Metadata.AppID ??= appID.ShortcutID;
+			this.Metadata.BPMAppID ??= appID.LegacyID;
 		}
 	}
 
@@ -192,7 +190,7 @@ namespace SteamROMLibrarian.Serialization
 				if (sp.AppID == appID)
 					return true;
 			}
-			
+
 			return false;
 		}
 

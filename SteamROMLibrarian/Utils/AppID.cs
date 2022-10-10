@@ -3,7 +3,8 @@ using Force.Crc32;
 
 namespace SteamROMLibrarian.Utils
 {
-	internal class AppID
+	[Obsolete("Use AppID instead", true)]
+	internal class AppIDOld
 	{
 		private const ulong TOP = 0x8000_0000; // sets the 32nd bit to 1 
 		private const ulong BPM = 0x0200_0000; // used in big picture mode
@@ -42,7 +43,7 @@ namespace SteamROMLibrarian.Utils
 		public static string GenerateAppID(string exe, string appName)
 		{
 			return (GenerateAppIDInt(exe, appName) >> 32).ToString();
-		} 
+		}
 
 		/// <summary>
 		/// Used as app ID in shortcuts.vdf
@@ -51,5 +52,44 @@ namespace SteamROMLibrarian.Utils
 		{
 			return ((GenerateAppIDInt(exe, appName) >> 32) - SHC).ToString();
 		}
+	}
+
+	internal class AppID
+	{
+		private const uint TOP = 0x8000_0000; // sets the 32nd bit to 1 
+		private const ulong BPM = 0x0200_0000; // used in big picture mode
+		private const ulong SHC = 0x1_0000_0000; // constant that's subtracted to get the shortcut ID
+		private const ulong B32 = 0xFFFF_FFFF;
+
+		public string? Exe { get; }
+		public string AppName { get; }
+
+		public string ShortcutID { get; }
+
+		public string LegacyID { get; }
+
+		public AppID(string exe, string appName)
+		{
+			this.Exe = exe;
+			this.AppName = appName;
+
+			var crc = Crc32Algorithm.Compute(Encoding.UTF8.GetBytes(exe + appName));
+			this.ShortcutID = ((ulong)crc | TOP).ToString();
+			this.LegacyID = ((((ulong)crc | TOP) << 32) | BPM).ToString();
+		}
+
+		public AppID(string appName, string shortcutID, string legacyID)
+		{
+			this.AppName = appName;
+			this.ShortcutID = shortcutID;
+			this.LegacyID = legacyID;
+		}
+
+		public string GridImagePath(string gridDir, string ext) => Path.Join(gridDir, $"{this.ShortcutID}.{ext}");
+		public string HeroImagePath(string gridDir, string ext) => Path.Join(gridDir, $"{this.ShortcutID}_hero.{ext}");
+		public string IconImagePath(string gridDir, string ext) => Path.Join(gridDir, $"{this.ShortcutID}_icon.{ext}");
+		public string LogoImagePath(string gridDir, string ext) => Path.Join(gridDir, $"{this.ShortcutID}_logo.{ext}");
+		public string PosterImagePath(string gridDir, string ext) => Path.Join(gridDir, $"{this.ShortcutID}p.{ext}");
+		public string BigPictureGridImagePath(string gridDir, string ext) => Path.Join(gridDir, $"{this.LegacyID}.{ext}");
 	}
 }
