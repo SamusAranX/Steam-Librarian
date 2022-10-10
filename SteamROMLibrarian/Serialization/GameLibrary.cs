@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.IO;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using SteamROMLibrarian.Utils;
@@ -64,6 +65,18 @@ namespace SteamROMLibrarian.Serialization
 		[JsonPropertyName("steamMetadataDoNotEdit")]
 		public SteamMetadata Metadata { get; set; } = new();
 
+		private AppID appID;
+
+		internal enum ImageType
+		{
+			Grid,
+			Poster,
+			Hero,
+			Logo,
+			Icon,
+			BigPictureGrid,
+		}
+
 		public void OnDeserialized()
 		{
 			this.GenerateAppID();
@@ -90,9 +103,55 @@ namespace SteamROMLibrarian.Serialization
 
 		private void GenerateAppID()
 		{
-			var appID = new AppID(this.Path ?? "", this.Name);
-			this.Metadata.AppID ??= appID.ShortcutID;
-			this.Metadata.BPMAppID ??= appID.LegacyID;
+			this.appID = new AppID(this.Path ?? "", this.Name);
+			this.Metadata.AppID ??= this.appID.ShortcutID;
+			this.Metadata.BPMAppID ??= this.appID.LegacyID;
+		}
+
+		public string? GetImagePath(ImageType type)
+		{
+			return type switch
+			{
+				ImageType.Grid => this.Grid,
+				ImageType.Poster => this.Poster,
+				ImageType.Hero => this.Hero,
+				ImageType.Logo => this.Logo,
+				ImageType.Icon => this.Icon,
+				ImageType.BigPictureGrid => this.Grid,
+				_ => throw new ArgumentException($"Invalid image type"),
+			};
+		}
+
+		public string? GetSteamImageName(ImageType type)
+		{
+			var path = this.GetImagePath(type);
+			if (path == null)
+				return null;
+
+			var appIDStr = this.appID.ShortcutID;
+			var suffix = "";
+
+			switch (type)
+			{
+				case ImageType.Poster:
+					suffix = "p";
+					break;
+				case ImageType.Hero:
+					suffix = "_hero";
+					break;
+				case ImageType.Logo:
+					suffix = "_logo";
+					break;
+				case ImageType.Icon:
+					suffix = "_icon";
+					break;
+				case ImageType.BigPictureGrid:
+					appIDStr = this.appID.LegacyID;
+					break;
+			}
+
+			var ext = System.IO.Path.GetExtension(path).TrimStart('.');
+			return $"{appIDStr}{suffix}.{ext}";
 		}
 	}
 
