@@ -250,9 +250,12 @@ namespace SteamROMLibrarian
 			Console.WriteLine("Housekeeping completed.");
 			library.Save(libraryPath);
 
-			Console.WriteLine($"Creating backup at {steamShortcutsBackupPath}");
-			File.Copy(steamShortcutsPath, steamShortcutsBackupPath, true);
-			Console.WriteLine("Backup created.");
+			if (File.Exists(steamShortcutsPath))
+			{
+				Console.WriteLine($"Creating backup at {steamShortcutsBackupPath}");
+				File.Copy(steamShortcutsPath, steamShortcutsBackupPath, true);
+				Console.WriteLine("Backup created.");
+			}
 
 			Console.WriteLine($"Writing library to {steamShortcutsPath}");
 			newShortcutsVDF.Save(steamShortcutsPath);
