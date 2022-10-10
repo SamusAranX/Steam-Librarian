@@ -18,14 +18,23 @@ namespace SteamROMLibrarian
 				switch (steamUserIDs.Length)
 				{
 					case 0:
-						throw new NoUserIDsFoundException("Couldn't find any user IDs.");
+						Console.WriteLine("Couldn't find any user IDs.");
+						Environment.Exit(1);
+						break;
 					case 1:
 						steamUserID = steamUserIDs[0];
 						break;
 					default:
-						// TODO: actively refuse to continue in this case.
-						// this is what --user-id is for
-						steamUserID = steamUserIDs[0];
+						Console.WriteLine("Found more than one Steam ID:");
+						Console.WriteLine("----------");
+						foreach (var userID in steamUserIDs)
+						{
+							Console.WriteLine(userID);
+						}
+
+						Console.WriteLine("----------");
+						Console.WriteLine("Please use --user-id to specify one of these.");
+						Environment.Exit(1);
 						break;
 				}
 			}
@@ -73,11 +82,6 @@ namespace SteamROMLibrarian
 			}
 
 			//return;
-
-			// TODO: add custom artwork handling
-			// TODO: read LastPlayedTime from shortcuts.vdf and use that instead of reusing the value from library.json
-
-			// TODO: make preexistingShortcuts a list of appID and app names. app names are only for the user while IDs are used to look up shortcuts in shortcuts.vdf to reuse them when rewriting
 
 			var library = GameLibrary.Load(libraryPath);
 			Console.WriteLine("Library loaded successfully");
@@ -176,13 +180,24 @@ namespace SteamROMLibrarian
 					if (entry.Path != null && entry.Path.Trim() != "")
 						argsList.Add(entry.Path);
 
+					// TODO: implement custom artwork loading/copying
+
+					// read LastPlayedTime from shortcuts.vdf and use that if possible
+					// instead of reusing the value from library.json
+					var lastPlayTime = entry.Metadata.LastPlayTimeUnix;
+					var previouslyExported = shortcutsVDF.GetByID(appID.ToString());
+					if (previouslyExported != null)
+					{
+						lastPlayTime = previouslyExported.LastPlayTimeUnix;
+					}
+
 					var shortcut = new Shortcut()
 					{
 						AppID = appID,
 						AppName = entry.Name,
 						Exe = string.Join(" ", argsList),
 						StartDir = exeDir,
-						LastPlayTimeUnix = entry.Metadata.LastPlayTimeUnix,
+						LastPlayTimeUnix = lastPlayTime,
 						OpenVR = entry.VR,
 						Tags = new List<string> { categoryName },
 					};
@@ -192,15 +207,13 @@ namespace SteamROMLibrarian
 
 			Console.WriteLine($"Creating backup at {steamShortcutsBackupPath}");
 			File.Copy(steamShortcutsPath, steamShortcutsBackupPath, true);
-			Console.WriteLine($"Backup created.");
+			Console.WriteLine("Backup created.");
 
 			Console.WriteLine($"Writing library to {steamShortcutsPathDebug}");
 			newShortcutsVDF.Save(steamShortcutsPathDebug);
-			Console.WriteLine($"Library written.");
+			Console.WriteLine("Library written.");
 
-			// TODO: implement custom artwork loading/copying
-
-			Console.WriteLine($"Restart Steam to reload your changes.");
+			Console.WriteLine("Restart Steam to reload your changes.");
 		}
 
 		public static void WriteExampleLibrary(string libraryPath)
