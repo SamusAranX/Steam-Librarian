@@ -11,7 +11,7 @@ internal class Program
 		Console.OutputEncoding = Encoding.UTF8;
 
 		var root = new RootCommand();
-		root.Description = "A tool to add non-Steam apps and games with custom artwork to your library. Use the read or write commands.";
+		root.Description = "A tool to add non-Steam apps and games with custom artwork to your library. The root command will print this help message. Use the subcommands.";
 		root.SetHandler(() => root.Invoke("-h"));
 
 		#region Options

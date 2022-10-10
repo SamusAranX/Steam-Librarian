@@ -9,6 +9,7 @@
     <Title>Steam ROM Librarian</Title>
     <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
     <AssemblyName>librarian</AssemblyName>
+    <Version>1.0.1</Version>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

@@ -88,8 +88,16 @@ namespace SteamROMLibrarian
 			var library = GameLibrary.Load(libraryPath);
 			Console.WriteLine("Library loaded successfully");
 
-			var shortcutsVDF = ShortcutsVDF.Load(steamShortcutsPath);
-			Console.WriteLine("shortcuts.vdf loaded successfully");
+			var shortcutsVDF = new ShortcutsVDF();
+			if (File.Exists(steamShortcutsPath))
+			{
+				shortcutsVDF = ShortcutsVDF.Load(steamShortcutsPath);
+				Console.WriteLine("shortcuts.vdf loaded successfully");
+			}
+			else
+			{
+				Console.WriteLine("No shortcuts.vdf found. Generating new file");
+			}
 
 			Console.WriteLine("Doing housekeeping...");
 
