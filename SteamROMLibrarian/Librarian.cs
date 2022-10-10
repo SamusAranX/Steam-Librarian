@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using SteamROMLibrarian.Serialization;
+using SteamROMLibrarian.Utils;
 
 namespace SteamROMLibrarian
 {
@@ -52,7 +53,6 @@ namespace SteamROMLibrarian
 		{
 			var (steamLocation, userIDFolder) = Preflight(steamUserID);
 			var steamShortcutsPath = Path.Join(userIDFolder, "config", "shortcuts.vdf");
-			var shortcutsDeckPath = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "shortcutsDeck.vdf");
 
 			if (File.Exists(libraryPath) && !overwriteLibraryFile)
 			{
@@ -73,6 +73,8 @@ namespace SteamROMLibrarian
 			var steamShortcutsPath = Path.Join(userIDFolder, "config", "shortcuts.vdf");
 			var steamShortcutsBackupPath = Path.Join(userIDFolder, "config", "shortcuts.bak");
 			var steamShortcutsPathDebug = Path.Join(userIDFolder, "config", "shortcutsDebug.vdf");
+			var steamGridPath = Path.Join(userIDFolder, "config", "grid");
+			var libraryDir = Path.GetDirectoryName(libraryPath);
 
 			var steamProcesses = Process.GetProcessesByName("steam");
 			if (steamProcesses.Length > 0)
@@ -116,9 +118,6 @@ namespace SteamROMLibrarian
 				existingShortcuts.Add(shortcutsVDF.GetByID(ps.AppID)!);
 			}
 
-			Console.WriteLine("Housekeeping completed");
-			library.Save(libraryPath);
-
 			var newShortcutsVDF = new ShortcutsVDF()
 			{
 				Shortcuts = existingShortcuts,
@@ -141,11 +140,13 @@ namespace SteamROMLibrarian
 
 				foreach (var entry in category.Entries)
 				{
-					if (!uint.TryParse(entry.Metadata.AppID, out var appID))
+					if (!uint.TryParse(entry.Metadata.AppID, out var appIDInt))
 					{
 						Console.WriteLine($"Entry {categoryName}->{entry.Name} is missing its metadata or has an invalid app ID! Skipping entry");
 						continue;
 					}
+
+					var appID = new AppID(entry.Name, appIDInt);
 
 					var launcherName = category.DefaultLauncher;
 					if (entry.Launcher != null)
@@ -173,37 +174,73 @@ namespace SteamROMLibrarian
 					}
 
 					var argsList = new List<string>();
-					argsList.Add(launcher.Executable);
+					argsList.Add($"\"{launcher.Executable}\"");
 					if (launcher.Arguments.Trim() != "")
 						argsList.Add(launcher.Arguments);
 
 					if (entry.Path != null && entry.Path.Trim() != "")
-						argsList.Add(entry.Path);
+						argsList.Add($"\"{entry.Path}\"");
 
 					// TODO: implement custom artwork loading/copying
+					var imageTypes = Enum.GetValues<ROMEntry.ImageType>();
+					var iconPath = "";
+					foreach (var imageType in imageTypes)
+					{
+						var imagePath = entry.GetImagePath(imageType);
+						if (imagePath == null)
+							continue;
 
-					// read LastPlayedTime from shortcuts.vdf and use that if possible
-					// instead of reusing the value from library.json
+						if (!Path.IsPathRooted(imagePath))
+							imagePath = Path.Join(libraryDir, imagePath);
+
+						if (!File.Exists(imagePath))
+						{
+							Console.WriteLine($"Can't find {imageType} image \"{imagePath}\"");
+							continue;
+						}
+
+						// if imagePath is not null, imageName won't be either, so unwrapping is safe
+						var imageName = entry.GetSteamImageName(imageType)!;
+						var steamImagePath = Path.Join(steamGridPath, imageName);
+
+						if (imageType == ROMEntry.ImageType.Icon)
+							iconPath = steamImagePath;
+
+						File.Copy(imagePath, steamImagePath, true);
+					}
+
+					// read LastPlayedTime and tags from shortcuts.vdf and use those if possible
+					// instead of reusing the values from library.json
 					var lastPlayTime = entry.Metadata.LastPlayTimeUnix;
-					var previouslyExported = shortcutsVDF.GetByID(appID.ToString());
+					var shortcutTags = new List<string> { categoryName };
+					var previouslyExported = shortcutsVDF.GetByID(appID.ShortcutID);
 					if (previouslyExported != null)
 					{
 						lastPlayTime = previouslyExported.LastPlayTimeUnix;
+						shortcutTags = previouslyExported.Tags;
+
+						// make sure the entry is put into the collection given in library.json
+						if (!shortcutTags.Contains(categoryName))
+							shortcutTags.Add(categoryName);
 					}
 
 					var shortcut = new Shortcut()
 					{
-						AppID = appID,
+						AppID = appIDInt,
 						AppName = entry.Name,
 						Exe = string.Join(" ", argsList),
 						StartDir = exeDir,
+						Icon = iconPath,
 						LastPlayTimeUnix = lastPlayTime,
 						OpenVR = entry.VR,
-						Tags = new List<string> { categoryName },
+						Tags = shortcutTags,
 					};
 					newShortcutsVDF.Shortcuts.Add(shortcut);
 				}
 			}
+
+			Console.WriteLine("Housekeeping completed.");
+			library.Save(libraryPath);
 
 			Console.WriteLine($"Creating backup at {steamShortcutsBackupPath}");
 			File.Copy(steamShortcutsPath, steamShortcutsBackupPath, true);
