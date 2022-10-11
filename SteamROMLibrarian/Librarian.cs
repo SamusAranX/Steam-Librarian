@@ -112,7 +112,7 @@ namespace SteamROMLibrarian
 			var newShortcuts = new List<ShortcutPointer>(); // shortcuts in shortcuts.vdf that are not in library.json yet
 			foreach (var s in shortcutsVDF)
 			{
-				if (!library.ContainsPreexisting(s.AppID.ToString()))
+				if (!library.ContainsPreexisting(s.AppID.ToString()) && !library.Contains(s.AppID.ToString()))
 					newShortcuts.Add(new(s.AppID.ToString(), s.AppName));
 			}
 
