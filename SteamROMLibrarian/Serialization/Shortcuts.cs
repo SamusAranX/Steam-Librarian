@@ -23,7 +23,6 @@ namespace SteamROMLibrarian.Serialization
 
 		private string _exe = "";
 		private string _startDir = "";
-		private string? _icon;
 
 		public string Exe
 		{
@@ -50,17 +49,7 @@ namespace SteamROMLibrarian.Serialization
 		}
 
 		[KVProperty("icon")]
-		public string? Icon
-		{
-			get => this._icon;
-			set
-			{
-				if (value != null && !value.IsQuoted())
-					value = value.ToQuotedString();
-
-				this._icon = value;
-			}
-		}
+		public string? Icon { get; set; }
 
 		public string ShortcutPath { get; set; }
 		public string LaunchOptions { get; set; }
