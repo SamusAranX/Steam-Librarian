@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Text.Json;
 using SteamROMLibrarian.Serialization;
 using SteamROMLibrarian.Utils;
 
@@ -65,6 +66,42 @@ namespace SteamROMLibrarian
 
 			library.PreexistingShortcuts = shortcuts.Select(s => new ShortcutPointer(s.AppID.ToString(), s.AppName)).ToList();
 			library.Save(libraryPath);
+		}
+
+		public static void CheckLibrary(string libraryPath)
+		{
+			GameLibrary library;
+			try
+			{
+				library = GameLibrary.Load(libraryPath);
+				Console.WriteLine("Library loaded successfully");
+			}
+			catch (JsonException e)
+			{
+				Console.WriteLine(e.Message);
+				Debug.WriteLine(e);
+				return;
+			}
+
+			foreach (var (categoryName, category) in library.Categories)
+			{
+				Console.WriteLine($"##### Category \"{categoryName}\"");
+
+				foreach (var entry in category.Entries)
+				{
+					Console.WriteLine($"--- {entry.Name}");
+					if (entry.BIOS)
+						Console.WriteLine("BIOS Entry");
+					else
+					{
+						var entryPath = entry.GetFullPath(category.RootDirectory);
+						Console.WriteLine(entryPath);
+						Console.WriteLine($"Exists: {File.Exists(entryPath)}");
+					}
+				}
+
+				Console.WriteLine();
+			}
 		}
 
 		public static void WriteLibrary(string? steamUserID, string libraryPath)
@@ -188,8 +225,7 @@ namespace SteamROMLibrarian
 
 					if (entry.Path != null && entry.Path.Trim() != "")
 						argsList.Add($"\"{entry.Path}\"");
-
-					// TODO: implement custom artwork loading/copying
+					
 					var imageTypes = Enum.GetValues<ROMEntry.ImageType>();
 					var iconPath = "";
 					foreach (var imageType in imageTypes)
@@ -267,6 +303,15 @@ namespace SteamROMLibrarian
 		public static void WriteExampleLibrary(string libraryPath)
 		{
 			Console.WriteLine(GameLibrary.ExampleLibrary.ToJSON());
+		}
+
+		public static void ResetCollections()
+		{
+			var psi = new ProcessStartInfo("steam://resetcollections")
+			{
+				UseShellExecute = true,
+			};
+			Process.Start(psi);
 		}
 	}
 }

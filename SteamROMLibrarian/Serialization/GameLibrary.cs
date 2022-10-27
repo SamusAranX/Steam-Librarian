@@ -23,11 +23,21 @@ namespace SteamROMLibrarian.Serialization
 	internal class Category
 	{
 		public string DefaultLauncher { get; set; }
+		public string RootDirectory { get; set; }
 		public List<ROMEntry> Entries { get; set; }
 
 		public Category(string defaultLauncher, List<ROMEntry> entries)
 		{
 			this.DefaultLauncher = defaultLauncher;
+			this.RootDirectory = "";
+			this.Entries = entries;
+		}
+
+		[JsonConstructor]
+		public Category(string defaultLauncher, string rootDirectory, List<ROMEntry> entries)
+		{
+			this.DefaultLauncher = defaultLauncher;
+			this.RootDirectory = rootDirectory ?? "";
 			this.Entries = entries;
 		}
 	}
@@ -54,6 +64,7 @@ namespace SteamROMLibrarian.Serialization
 	{
 		public string? Launcher { get; set; }
 		public string Name { get; set; }
+		public bool BIOS { get; set; }
 		public string? Path { get; set; }
 		public bool VR { get; set; }
 		public string? Grid { get; set; }
@@ -83,7 +94,9 @@ namespace SteamROMLibrarian.Serialization
 		}
 
 		[JsonConstructor]
+#pragma warning disable CS8618
 		public ROMEntry(string name, string? path = null)
+#pragma warning restore CS8618
 		{
 			this.Name = name;
 			this.Path = path;
@@ -118,7 +131,7 @@ namespace SteamROMLibrarian.Serialization
 				ImageType.Logo => this.Logo,
 				ImageType.Icon => this.Icon,
 				ImageType.BigPictureGrid => this.Grid,
-				_ => throw new ArgumentException($"Invalid image type"),
+				_ => throw new ArgumentException("Invalid image type"),
 			};
 		}
 
@@ -152,6 +165,20 @@ namespace SteamROMLibrarian.Serialization
 
 			var ext = System.IO.Path.GetExtension(path).TrimStart('.');
 			return $"{appIDStr}{suffix}.{ext}";
+		}
+
+		public string? GetFullPath(string rootDir)
+		{
+			if (this.BIOS)
+				return this.Path;
+
+			if (string.IsNullOrEmpty(this.Path))
+				return null;
+
+			if (rootDir == string.Empty)
+				return this.Path;
+
+			return System.IO.Path.Combine(rootDir, this.Path ?? "");
 		}
 	}
 
@@ -279,10 +306,10 @@ namespace SteamROMLibrarian.Serialization
 						)
 					},
 					{
-						"GB/GBA", new Category("mgba", new List<ROMEntry>
+						"GB/GBA", new Category("mgba", "/run/media/mmcblk0p1/roms", new List<ROMEntry>
 							{
-								new("Test Cartridge", "/run/media/mmcblk0p1/roms/gba/Jayro's Test Cartridge v1.15.gba"),
-								new("LSDj", "/run/media/mmcblk0p1/roms/gb/lsdj9_2_L.gb", "sameboy"),
+								new("Test Cartridge", "gba/Jayro's Test Cartridge v1.15.gba"),
+								new("LSDj", "gb/lsdj9_2_L.gb", "sameboy"),
 							}
 						)
 					},
