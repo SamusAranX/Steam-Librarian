@@ -8,6 +8,7 @@ namespace SteamROMLibrarian.Serialization
 	{
 		public static JsonSerializerOptions Options = new()
 		{
+			AllowTrailingCommas = true,
 			DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault,
 			Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
 			PropertyNameCaseInsensitive = true,
