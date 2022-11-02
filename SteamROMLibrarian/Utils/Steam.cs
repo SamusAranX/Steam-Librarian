@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace SteamROMLibrarian.Utils
 {
-	public class Steam
+	internal class Steam
 	{
 		public static string GetSteamPath()
 		{
