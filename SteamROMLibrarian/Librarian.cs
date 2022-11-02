@@ -12,26 +12,37 @@ namespace SteamROMLibrarian
 	{
 		private static (string SteamLocation, string SteamUserIDFolder) Preflight(string? steamUserID = null)
 		{
-			var steamLocation = Utils.Steam.GetSteamPath();
+			var steamLocation = Steam.GetSteamPath();
 
 			if (steamUserID == null)
 			{
-				var steamUserIDs = Utils.Steam.GetSteamUserIDs();
+				var steamUserIDs = Steam.GetSteamUserIDs();
 				switch (steamUserIDs.Length)
 				{
 					case 0:
-						Console.WriteLine("Couldn't find any user IDs.");
+						Console.WriteLine("Couldn't find any Steam users.");
 						Environment.Exit(1);
 						break;
 					case 1:
 						steamUserID = steamUserIDs[0];
 						break;
 					default:
-						Console.WriteLine("Found more than one Steam ID:");
+						var steamLoginUsersPath = Path.Join(steamLocation, "config", "loginusers.vdf");
+						var loginUsers = SteamLoginUsersVDF.Load(steamLoginUsersPath);
+
+						Console.WriteLine("Found more than one Steam user:");
 						Console.WriteLine("----------");
 						foreach (var userID in steamUserIDs)
 						{
-							Console.WriteLine(userID);
+							var loginUser = loginUsers.SingleOrDefault(u => u.UserID == userID);
+							if (loginUser != null)
+							{
+								Console.WriteLine($"{userID}: {loginUser.PersonaName}");
+							}
+							else
+							{
+								Console.WriteLine(userID);
+							}
 						}
 
 						Console.WriteLine("----------");
