@@ -234,8 +234,9 @@ namespace SteamROMLibrarian
 					if (launcher.Arguments.Trim() != "")
 						argsList.Add(launcher.Arguments);
 
-					if (entry.Path != null && entry.Path.Trim() != "")
-						argsList.Add($"\"{entry.Path}\"");
+					var entryPath = entry.GetFullPath(category.RootDirectory);
+					if (entryPath != null && entryPath.Trim() != string.Empty)
+						argsList.Add($"\"{entryPath}\"");
 					
 					var imageTypes = Enum.GetValues<ROMEntry.ImageType>();
 					var iconPath = "";
