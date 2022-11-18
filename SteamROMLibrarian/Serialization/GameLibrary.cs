@@ -166,7 +166,12 @@ namespace SteamROMLibrarian.Serialization
 			return $"{appIDStr}{suffix}.{ext}";
 		}
 
-		public string? GetFullPath(string rootDir)
+		/// <summary>
+		/// Helper method that returns the actual full path when combined with a category root directory.
+		/// </summary>
+		/// <param name="rootDirectory">The game category's root directory.</param>
+		/// <returns>The full path to the ROMEntry's file.</returns>
+		public string? GetFullPath(string rootDirectory)
 		{
 			if (this.BIOS)
 				return this.Path;
@@ -174,10 +179,10 @@ namespace SteamROMLibrarian.Serialization
 			if (string.IsNullOrEmpty(this.Path))
 				return null;
 
-			if (rootDir == string.Empty)
+			if (rootDirectory == string.Empty)
 				return this.Path;
 
-			return System.IO.Path.Combine(rootDir, this.Path ?? "");
+			return System.IO.Path.Combine(rootDirectory, this.Path ?? "");
 		}
 	}
 
