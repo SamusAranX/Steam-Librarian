@@ -124,8 +124,7 @@ namespace SteamROMLibrarian
 			var steamGridPath = Path.Join(userIDFolder, "config", "grid");
 			var libraryDir = Path.GetDirectoryName(libraryPath);
 
-			var steamProcesses = Process.GetProcessesByName("steam");
-			if (steamProcesses.Length > 0)
+			if (Steam.IsSteamRunning())
 			{
 				Console.WriteLine("It looks like Steam is currently running! Please exit Steam completely before doing this. Your changes will be visible once you restart Steam.");
 				return;
@@ -319,6 +318,12 @@ namespace SteamROMLibrarian
 
 		public static void ResetCollections()
 		{
+			if (!Steam.IsSteamRunning())
+			{
+				Console.WriteLine("This command only works when Steam is running. Please start Steam, then try this again.");
+				return;
+			}
+
 			var psi = new ProcessStartInfo("steam://resetcollections")
 			{
 				UseShellExecute = true,

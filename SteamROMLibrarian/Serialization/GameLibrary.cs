@@ -221,7 +221,7 @@ namespace SteamROMLibrarian.Serialization
 		public static GameLibrary Load(string libraryPath)
 		{
 			using var fs = File.OpenRead(libraryPath);
-			var library = JsonSerializer.Deserialize<GameLibrary>(fs, JSON.Options);
+			var library = JsonSerializer.Deserialize(fs, JsonContext.Default.GameLibrary);
 
 			if (library == null)
 				throw new InvalidLibraryException($"Can't load library from ${libraryPath}!");

@@ -1,4 +1,5 @@
 ﻿using Microsoft.Win32;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace SteamROMLibrarian.Utils
@@ -52,6 +53,12 @@ namespace SteamROMLibrarian.Utils
 				return Array.Empty<string>();
 			}
 
+		}
+
+		public static bool IsSteamRunning()
+		{
+			var steamProcesses = Process.GetProcessesByName("steam");
+			return steamProcesses.Length > 0;
 		}
 	}
 }
