@@ -167,9 +167,9 @@ namespace SteamROMLibrarian.Serialization
 				};
 				return vdf;
 			}
-			catch (Exception)
+			catch (Exception e)
 			{
-				throw new InvalidVDFException($"Can't load shortcuts from {filename}!");
+				throw new InvalidVDFException($"Can't load shortcuts from {filename}!", e);
 			}
 		}
 

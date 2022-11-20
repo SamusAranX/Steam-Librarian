@@ -17,4 +17,8 @@ namespace SteamROMLibrarian.Serialization
 			WriteIndented = true,
 		};
 	}
+
+	[JsonSourceGenerationOptions(GenerationMode = JsonSourceGenerationMode.Default, PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase, WriteIndented = true)]
+	[JsonSerializable(typeof(GameLibrary))]
+	internal partial class JsonContext : JsonSerializerContext { }
 }
