@@ -477,3 +477,6 @@ fabric.properties
 
 # macOS
 .DS_Store
+
+# launch settings
+launchSettings.json
