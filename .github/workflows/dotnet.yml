@@ -1,0 +1,31 @@
+# This workflow will build a .NET project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
+
+name: .NET
+
+on:
+  push:
+    tags:        
+      - '*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 6.0.x
+    - name: Restore dependencies
+      run: dotnet restore
+    - name: Publish Windows (x64)
+      run: dotnet publish -p:PublishProfile=${{github.workspace}}/SteamROMLibrarian/Properties/PublishProfiles/win-x64.pubxml
+    - name: Publish Windows (ARM64)
+      run: dotnet publish -p:PublishProfile=${{github.workspace}}/SteamROMLibrarian/Properties/PublishProfiles/win-arm64.pubxml
+    - name: Publish Linux (x64)
+      run: dotnet publish -p:PublishProfile=${{github.workspace}}/SteamROMLibrarian/Properties/PublishProfiles/linux-x64.pubxml
+    - name: Publish macOS (ARM)
+      run: dotnet publish -p:PublishProfile=${{github.workspace}}/SteamROMLibrarian/Properties/PublishProfiles/mac-arm64.pubxml
+    - name: Publish macOS (x64)
+      run: dotnet publish -p:PublishProfile=${{github.workspace}}/SteamROMLibrarian/Properties/PublishProfiles/mac-x64.pubxml
