@@ -10,6 +10,9 @@ on:
 
 jobs:
   build:
+    strategy:
+      matrix:
+        profile: [linux-x64, win-x64, win-arm64, mac-x64, mac-arm64]
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -17,15 +20,19 @@ jobs:
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 6.0.x
+    - uses: actions/cache@v3
+      with:
+        path: ~/.nuget/packages
+        # Look to see if there is a cache hit for the corresponding requirements file
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget
     - name: Restore dependencies
       run: dotnet restore
-    - name: Publish Windows (x64)
-      run: dotnet publish -p:PublishProfile=${{github.workspace}}/SteamROMLibrarian/Properties/PublishProfiles/win-x64.pubxml
-    - name: Publish Windows (ARM64)
-      run: dotnet publish -p:PublishProfile=${{github.workspace}}/SteamROMLibrarian/Properties/PublishProfiles/win-arm64.pubxml
-    - name: Publish Linux (x64)
-      run: dotnet publish -p:PublishProfile=${{github.workspace}}/SteamROMLibrarian/Properties/PublishProfiles/linux-x64.pubxml
-    - name: Publish macOS (ARM)
-      run: dotnet publish -p:PublishProfile=${{github.workspace}}/SteamROMLibrarian/Properties/PublishProfiles/mac-arm64.pubxml
-    - name: Publish macOS (x64)
-      run: dotnet publish -p:PublishProfile=${{github.workspace}}/SteamROMLibrarian/Properties/PublishProfiles/mac-x64.pubxml
+    - name: Publish
+      run: dotnet publish -p:PublishProfile=${{ github.workspace }}/SteamROMLibrarian/Properties/PublishProfiles/${{ matrix.profile }}.pubxml
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: librarian-${{ matrix.profile }}
+        path: ${{ github.workspace }}/SteamROMLibrarian/bin/Release/publish/${{ matrix.profile }}/*
