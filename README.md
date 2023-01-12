@@ -183,6 +183,28 @@ First, make sure Steam isn't running. The app will try to detect whether Steam i
 
 It's possible for Steam to not immediately pick up that new collections were added or that new entries were added to already existing collections. In that case run `librarian reset` to reset your collections. This *might* wreck your own custom collections, but Steam will tell you what collections it'll keep and give you a chance to cancel before *actually* resetting all collections. (**Note:** This is currently broken on the Steam Deck. In Desktop Mode, open [`steam://resetcollections`](steam://resetcollections) in a browser instead)
 
+**Also**, keep the JSON file around! It's how the app remembers the games you added and additionally it'll come in handy for things like…
+
+### Adding or removing games later
+
+To add new games, simply add new entries to the library JSON file and run `librarian write -l romlibrary.json` again.
+
+To remove games, simply delete them from within Steam and remember to delete the corresponding entry from your library JSON file before running `librarian write` the next time.
+
+### A note about metadata
+
+If you open your library JSON file later, you might see stuff added by Steam Librarian like:
+
+```json
+"steamMetadataDoNotEdit": {
+  "appID": "3921758550",
+  "bpmAppID": "16843824715091935232",
+  "lastPlayTime": "1970-01-01T01:00:00+01:00"
+}
+```
+
+As the name suggests, please don't edit this. This is what ensures the app doesn't add duplicate entries.
+
 ### That's it!
 
 ![A Steam Deck screenshot of several collections named after consoles](images/ondeck.png)
