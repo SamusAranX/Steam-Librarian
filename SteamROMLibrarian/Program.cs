@@ -36,6 +36,12 @@ internal class Program
 			getDefaultValue: () => false
 		);
 
+		var entryPathsOption = new Option<bool>(
+			name: "--entry-paths",
+			description: "Show entry file paths.",
+			getDefaultValue: () => false
+		);
+
 		#endregion
 
 		var prepareCommand = new Command("prepare", "Reads Steam shortcuts and prepares a library JSON file. You should only need to use this once.");
@@ -45,20 +51,20 @@ internal class Program
 
 		var checkCommand = new Command("check", "Reads the library JSON file and checks it for errors.");
 		checkCommand.AddOption(libraryPathOption);
+		checkCommand.AddOption(entryPathsOption);
 
 		var writeCommand = new Command("write", "Writes library JSON to Steam library.");
 		writeCommand.AddOption(userIDOption);
 		writeCommand.AddOption(libraryPathOption);
 
 		var writeExampleCommand = new Command("write-example", "Outputs an example library JSON file.");
-		writeExampleCommand.AddOption(libraryPathOption);
 
 		var resetCollectionsCommand = new Command("reset", "Runs steam://resetcollections.");
 
 		prepareCommand.SetHandler(Librarian.PrepareLibrary, userIDOption, libraryPathOption, overwriteOption);
-		checkCommand.SetHandler(Librarian.CheckLibrary, libraryPathOption);
+		checkCommand.SetHandler(Librarian.CheckLibrary, libraryPathOption, entryPathsOption);
 		writeCommand.SetHandler(Librarian.WriteLibrary, userIDOption, libraryPathOption);
-		writeExampleCommand.SetHandler(Librarian.WriteExampleLibrary, libraryPathOption);
+		writeExampleCommand.SetHandler(Librarian.WriteExampleLibrary);
 		resetCollectionsCommand.SetHandler(Librarian.ResetCollections);
 
 		root.Add(prepareCommand);
