@@ -79,13 +79,14 @@ namespace SteamROMLibrarian
 			library.Save(libraryPath);
 		}
 
-		public static void CheckLibrary(string libraryPath)
+		public static void CheckLibrary(string libraryPath, bool showEntryPaths)
 		{
 			GameLibrary library;
 			try
 			{
 				library = GameLibrary.Load(libraryPath);
 				Console.WriteLine("Library loaded successfully");
+				Console.WriteLine();
 			}
 			catch (JsonException e)
 			{
@@ -100,14 +101,25 @@ namespace SteamROMLibrarian
 
 				foreach (var entry in category.Entries)
 				{
-					Console.WriteLine($"--- {entry.Name}");
+					Console.Write($"--- {entry.Name}");
 					if (entry.BIOS)
-						Console.WriteLine("BIOS Entry");
+						Console.WriteLine(" (BIOS)");
 					else
 					{
 						var entryPath = entry.GetFullPath(category.RootDirectory);
-						Console.WriteLine(entryPath);
-						Console.WriteLine($"Exists: {File.Exists(entryPath)}");
+						if (!File.Exists(entryPath))
+						{
+							Console.WriteLine(" (NOT FOUND)");
+						}
+						else
+						{
+							Console.WriteLine();
+						}
+
+						if (showEntryPaths)
+						{
+							Console.WriteLine(entryPath);
+						}
 					}
 				}
 
@@ -311,7 +323,7 @@ namespace SteamROMLibrarian
 			Console.WriteLine("Restart Steam to reload your changes.");
 		}
 
-		public static void WriteExampleLibrary(string libraryPath)
+		public static void WriteExampleLibrary()
 		{
 			Console.WriteLine(GameLibrary.ExampleLibrary.ToJSON());
 		}
