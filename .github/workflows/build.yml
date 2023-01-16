@@ -33,7 +33,7 @@ jobs:
         run: dotnet restore
 
       - name: Publish
-        run: dotnet publish -p:PublishProfile=${{ github.workspace }}/SteamROMLibrarian/Properties/PublishProfiles/${{ matrix.profile }}.pubxml
+        run: dotnet publish -clp:ErrorsOnly -p:PublishProfile=${{ github.workspace }}/SteamROMLibrarian/Properties/PublishProfiles/${{ matrix.profile }}.pubxml
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3
