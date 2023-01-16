@@ -2,10 +2,10 @@ name: Build for all platforms
 
 on:
   push:
-    tags:        
+    tags:
       - '*'
   workflow_dispatch:
-    # manual run
+
 jobs:
   build:
     strategy:
@@ -13,24 +13,36 @@ jobs:
         profile: [linux-x64, win-x64, win-arm64, mac-x64, mac-arm64]
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: 6.0.x
-    - uses: actions/cache@v3
-      with:
-        path: ~/.nuget/packages
-        # Look to see if there is a cache hit for the corresponding requirements file
-        key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
-        restore-keys: |
-          ${{ runner.os }}-nuget
-    - name: Restore dependencies
-      run: dotnet restore
-    - name: Publish
-      run: dotnet publish -p:PublishProfile=${{ github.workspace }}/SteamROMLibrarian/Properties/PublishProfiles/${{ matrix.profile }}.pubxml
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        name: librarian-${{ matrix.profile }}
-        path: ${{ github.workspace }}/SteamROMLibrarian/bin/Release/publish/${{ matrix.profile }}/*
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 6.0.x
+
+      - name: NuGet cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Publish
+        run: dotnet publish -p:PublishProfile=${{ github.workspace }}/SteamROMLibrarian/Properties/PublishProfiles/${{ matrix.profile }}.pubxml
+
+      - name: Archive
+        run: |
+          mkdir -p ./upload
+          zip -9 -j ./upload/librarian-${{ matrix.profile }}.zip ${{ github.workspace }}/SteamROMLibrarian/bin/Release/publish/${{ matrix.profile }}/*
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: librarian-${{ matrix.profile }}.zip
+          path: ./upload/librarian-${{ matrix.profile }}.zip
+          if-no-files-found: error

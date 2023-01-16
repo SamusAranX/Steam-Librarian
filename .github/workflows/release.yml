@@ -1,0 +1,63 @@
+name: Create draft release
+
+on:
+  push:
+    tags:
+      - '*'
+  workflow_dispatch:
+
+jobs:
+  call-build:
+    uses: ./.github/workflows/build.yml
+
+  release:
+    runs-on: ubuntu-latest
+    needs: [call-build]
+    steps:
+      - name: Create artifacts directory
+        run: mkdir -p ./artifacts
+
+      - name: Download artifact linux-x64
+        uses: actions/download-artifact@v3
+        with:
+          name: librarian-linux-x64.zip
+          path: ./artifacts
+
+      - name: Download artifact win-x64
+        uses: actions/download-artifact@v3
+        with:
+          name: librarian-win-x64.zip
+          path: ./artifacts
+
+      - name: Download artifact win-arm64
+        uses: actions/download-artifact@v3
+        with:
+          name: librarian-win-arm64.zip
+          path: ./artifacts
+
+      - name: Download artifact mac-x64
+        uses: actions/download-artifact@v3
+        with:
+          name: librarian-mac-x64.zip
+          path: ./artifacts
+
+      - name: Download artifact mac-arm64
+        uses: actions/download-artifact@v3
+        with:
+          name: librarian-mac-arm64.zip
+          path: ./artifacts
+
+      - name: List artifacts
+        run: |
+          ls -lhR ./artifacts
+
+      - name: Create release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Steam Librarian (Draft ${{ github.ref_name }})
+          body: Refer to [README.md](README.md) for instructions on how to use this.
+          files: ./artifacts/*.zip
+          draft: true
+          tag_name: ${{ github.ref_name }}
+          fail_on_unmatched_files: true
+          token: ${{ secrets.GITHUB_TOKEN }}
