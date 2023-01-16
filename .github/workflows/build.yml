@@ -35,14 +35,9 @@ jobs:
       - name: Publish
         run: dotnet publish -p:PublishProfile=${{ github.workspace }}/SteamROMLibrarian/Properties/PublishProfiles/${{ matrix.profile }}.pubxml
 
-      - name: Archive
-        run: |
-          mkdir -p ./upload
-          zip -9 -j ./upload/librarian-${{ matrix.profile }}.zip ${{ github.workspace }}/SteamROMLibrarian/bin/Release/publish/${{ matrix.profile }}/*
-
-      - name: Upload artifacts
+      - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
           name: librarian-${{ matrix.profile }}.zip
-          path: ./upload/librarian-${{ matrix.profile }}.zip
+          path: ${{ github.workspace }}/SteamROMLibrarian/bin/Release/publish/${{ matrix.profile }}/*
           if-no-files-found: error
