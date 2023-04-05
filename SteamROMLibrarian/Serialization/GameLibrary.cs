@@ -21,11 +21,11 @@ namespace SteamROMLibrarian.Serialization
 	[Serializable]
 	internal class Category
 	{
-		public string DefaultLauncher { get; set; }
+		public string? DefaultLauncher { get; set; }
 		public string RootDirectory { get; set; }
 		public List<ROMEntry> Entries { get; set; }
 
-		public Category(string defaultLauncher, List<ROMEntry> entries)
+		public Category(string? defaultLauncher, List<ROMEntry> entries)
 		{
 			this.DefaultLauncher = defaultLauncher;
 			this.RootDirectory = "";
@@ -33,7 +33,7 @@ namespace SteamROMLibrarian.Serialization
 		}
 
 		[JsonConstructor]
-		public Category(string defaultLauncher, string rootDirectory, List<ROMEntry> entries)
+		public Category(string? defaultLauncher, string rootDirectory, List<ROMEntry> entries)
 		{
 			this.DefaultLauncher = defaultLauncher;
 			this.RootDirectory = rootDirectory ?? "";
@@ -171,16 +171,13 @@ namespace SteamROMLibrarian.Serialization
 		/// </summary>
 		/// <param name="rootDirectory">The game category's root directory.</param>
 		/// <returns>The full path to the ROMEntry's file.</returns>
-		public string? GetFullPath(string rootDirectory)
+		public string GetFullPath(string rootDirectory)
 		{
-			if (this.BIOS)
-				return this.Path;
+			if (this.BIOS || rootDirectory == string.Empty)
+				return this.Path ?? "";
 
 			if (string.IsNullOrEmpty(this.Path))
-				return null;
-
-			if (rootDirectory == string.Empty)
-				return this.Path;
+				throw new ArgumentException("entry.Path is empty!");
 
 			return System.IO.Path.Combine(rootDirectory, this.Path ?? "");
 		}
