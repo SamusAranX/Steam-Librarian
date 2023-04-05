@@ -93,14 +93,31 @@ internal class Librarian
 		{
 			Console.WriteLine($"##### Category \"{categoryName}\"");
 
+			ROMLauncher? launcher = null;
+			if (category.DefaultLauncher != null)
+			{
+				if (!library.Launchers.ContainsKey(category.DefaultLauncher))
+				{
+					Console.WriteLine($"Can't find default launcher for category {categoryName}! Skipping category");
+					continue;
+				}
+
+				launcher = library.Launchers[category.DefaultLauncher];
+				if (launcher.Executable.Trim() == "")
+				{
+					Console.WriteLine($"Default launcher {category.DefaultLauncher} for category {categoryName} is missing an executable path! Skipping category");
+					continue;
+				}
+			}
+
 			foreach (var entry in category.Entries)
 			{
 				Console.Write($"--- {entry.Name}");
-				if (entry.BIOS)
-					Console.WriteLine(" (BIOS)");
+				if (entry.NoRoot)
+					Console.WriteLine(" (no root)");
 				else
 				{
-					var entryPath = entry.GetFullPath(category.RootDirectory);
+					var entryPath = entry.Executable(category.RootDirectory, launcher);
 					if (!File.Exists(entryPath))
 						Console.WriteLine(" (NOT FOUND)");
 					else
@@ -130,8 +147,6 @@ internal class Librarian
 			Console.WriteLine("It looks like Steam is currently running! Please exit Steam completely before doing this. Your changes will be visible once you restart Steam.");
 			return;
 		}
-
-		//return;
 
 		var library = GameLibrary.Load(libraryPath);
 		Console.WriteLine("Library loaded successfully");
@@ -222,45 +237,21 @@ internal class Librarian
 					}
 				}
 
-				var argsList = new List<string>();
-				string entryPath;
+				var exePath = entry.Executable(category.RootDirectory, launcher);
 
-				try
-				{
-					entryPath = entry.GetFullPath(category.RootDirectory);
-				}
-				catch (ArgumentException e)
-				{
-					Console.WriteLine($"The path value for entry {categoryName}->{entry.Name} is invalid! Skipping entry");
-					continue;
-				}
-
-				var exeDir = "";
+				var startDir = "";
 				if (launcher != null)
 				{
-					exeDir = new FileInfo(launcher.Executable).DirectoryName;
-					if (exeDir == null)
-					{
-						Console.WriteLine($"Can't determine the containing directory for launcher {launcherName}! Skipping entry");
-						continue;
-					}
-
-					argsList.Add($"\"{launcher.Executable}\"");
-					if (launcher.Arguments.Trim() != "")
-						argsList.Add(launcher.Arguments);
+					startDir = new FileInfo(launcher.Executable).DirectoryName;
+					if (startDir == null)
+						throw new ArgumentException($"Launcher {launcherName} does not point to a valid executable");
 				}
 				else
 				{
-					exeDir = new FileInfo(entryPath).DirectoryName;
-					if (exeDir == null)
-					{
-						Console.WriteLine($"Can't determine the containing directory for entry {categoryName}->{entry.Name}! Skipping entry");
-						continue;
-					}
+					startDir = new FileInfo(exePath).DirectoryName;
+					if (startDir == null)
+						throw new ArgumentException($"Entry {categoryName}->{entry.Name} does not point to a valid executable");
 				}
-				
-				if (entryPath.Trim() != string.Empty)
-					argsList.Add($"\"{entryPath}\"");
 
 				var imageTypes = Enum.GetValues<ROMEntry.ImageType>();
 				var iconPath = "";
@@ -308,8 +299,8 @@ internal class Librarian
 				{
 					AppID = appIDInt,
 					AppName = entry.Name,
-					Exe = string.Join(" ", argsList),
-					StartDir = exeDir,
+					Exe = exePath,
+					StartDir = startDir,
 					Icon = iconPath,
 					LastPlayTimeUnix = lastPlayTime,
 					OpenVR = entry.VR,

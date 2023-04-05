@@ -17,27 +17,27 @@ internal class Program
 		#region Options
 
 		var libraryPathOption = new Option<string>(
-			name: "--library",
-			description: "The path to the library JSON file."
+			"--library",
+			"The path to the library JSON file."
 		);
 		libraryPathOption.IsRequired = true;
 		libraryPathOption.AddAlias("-l");
 
 		var userIDOption = new Option<string?>(
-			name: "--user-id",
+			"--user-id",
 			description: "Disable automatic user ID detection and use this specific one.",
 			getDefaultValue: () => null
 		);
 		userIDOption.AddAlias("-u");
 
 		var overwriteOption = new Option<bool>(
-			name: "--overwrite",
+			"--overwrite",
 			description: "Overwrite library.json if it already exists.",
 			getDefaultValue: () => false
 		);
 
 		var entryPathsOption = new Option<bool>(
-			name: "--entry-paths",
+			"--entry-paths",
 			description: "Show entry file paths.",
 			getDefaultValue: () => false
 		);

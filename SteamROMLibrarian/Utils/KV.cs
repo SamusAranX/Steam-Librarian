@@ -1,21 +1,26 @@
 ﻿using System.Text;
 
-namespace SteamROMLibrarian.Utils
+namespace SteamROMLibrarian.Utils;
+
+internal class KV
 {
-	internal class KV
+	private static readonly Encoding ISO88592 = Encoding.GetEncoding("ISO-8859-2");
+
+	private static string GetIntString(byte[] bytes, bool bigEndian = false)
 	{
-		private static readonly Encoding ISO88592 = Encoding.GetEncoding("ISO-8859-2");
+		if (bigEndian && BitConverter.IsLittleEndian)
+			Array.Reverse(bytes);
 
-		private static string GetIntString(byte[] bytes, bool bigEndian = false)
-		{
-			if (bigEndian && BitConverter.IsLittleEndian)
-				Array.Reverse(bytes);
+		return ISO88592.GetString(bytes);
+	}
 
-			return ISO88592.GetString(bytes);
-		}
+	public static string GetIntString(int value, bool bigEndian = false)
+	{
+		return GetIntString(BitConverter.GetBytes(value), bigEndian);
+	}
 
-		public static string GetIntString(int value, bool bigEndian = false) => GetIntString(BitConverter.GetBytes(value), bigEndian);
-
-		public static string GetIntString(uint value, bool bigEndian = false) => GetIntString(BitConverter.GetBytes(value), bigEndian);
+	public static string GetIntString(uint value, bool bigEndian = false)
+	{
+		return GetIntString(BitConverter.GetBytes(value), bigEndian);
 	}
 }
