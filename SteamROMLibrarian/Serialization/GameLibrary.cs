@@ -111,6 +111,20 @@ internal class ROMEntry : IJsonOnDeserialized
 		this.Metadata.BPMAppID ??= this._appID.LegacyID;
 	}
 
+	public string? SetImagePath(ImageType type, string? path)
+	{
+		return type switch
+		{
+			ImageType.Grid => this.Grid = path,
+			ImageType.Poster => this.Poster = path,
+			ImageType.Hero => this.Hero = path,
+			ImageType.Logo => this.Logo = path,
+			ImageType.Icon => this.Icon = path,
+			ImageType.BigPictureGrid => this.Grid = path,
+			_ => throw new ArgumentException("Invalid image type"),
+		};
+	}
+
 	public string? GetImagePath(ImageType type)
 	{
 		return type switch
@@ -290,7 +304,7 @@ internal class GameLibrary
 	public static GameLibrary Load(string libraryPath)
 	{
 		using var fs = File.OpenRead(libraryPath);
-		var library = JsonSerializer.Deserialize(fs, JsonContext.Default.GameLibrary);
+		var library = JsonSerializer.Deserialize<GameLibrary>(fs, JSON.Options);
 
 		if (library == null)
 			throw new InvalidLibraryException($"Can't load library from ${libraryPath}!");

@@ -42,6 +42,13 @@ internal class Program
 			getDefaultValue: () => false
 		);
 
+		var fixLibraryOption = new Option<bool>(
+			"--fix",
+			description: "Automatically fix library image paths.",
+			getDefaultValue: () => false
+		);
+		fixLibraryOption.AddAlias("-f");
+
 		#endregion
 
 		var prepareCommand = new Command("prepare", "Reads Steam shortcuts and prepares a library JSON file. You should only need to use this once.");
@@ -52,6 +59,7 @@ internal class Program
 		var checkCommand = new Command("check", "Reads the library JSON file and checks it for errors.");
 		checkCommand.AddOption(libraryPathOption);
 		checkCommand.AddOption(entryPathsOption);
+		checkCommand.AddOption(fixLibraryOption);
 
 		var writeCommand = new Command("write", "Writes library JSON to Steam library.");
 		writeCommand.AddOption(userIDOption);
@@ -62,7 +70,7 @@ internal class Program
 		var resetCollectionsCommand = new Command("reset", "Runs steam://resetcollections.");
 
 		prepareCommand.SetHandler(Librarian.PrepareLibrary, userIDOption, libraryPathOption, overwriteOption);
-		checkCommand.SetHandler(Librarian.CheckLibrary, libraryPathOption, entryPathsOption);
+		checkCommand.SetHandler(Librarian.CheckLibrary, libraryPathOption, entryPathsOption, fixLibraryOption);
 		writeCommand.SetHandler(Librarian.WriteLibrary, userIDOption, libraryPathOption);
 		writeExampleCommand.SetHandler(Librarian.WriteExampleLibrary);
 		resetCollectionsCommand.SetHandler(Librarian.ResetCollections);

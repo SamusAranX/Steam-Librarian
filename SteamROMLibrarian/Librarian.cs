@@ -73,7 +73,7 @@ internal class Librarian
 		library.Save(libraryPath);
 	}
 
-	public static void CheckLibrary(string libraryPath, bool showEntryPaths)
+	public static void CheckLibrary(string libraryPath, bool showEntryPaths, bool fixLibrary)
 	{
 		GameLibrary library;
 		try
@@ -88,6 +88,8 @@ internal class Librarian
 			Debug.WriteLine(e);
 			return;
 		}
+
+		var libraryDir = Path.GetDirectoryName(libraryPath)!;
 
 		foreach (var (categoryName, category) in library.Categories)
 		{
@@ -126,9 +128,58 @@ internal class Librarian
 					if (showEntryPaths)
 						Console.WriteLine(entryPath);
 				}
+
+				var imageTypes = new[] { ROMEntry.ImageType.Grid, ROMEntry.ImageType.Poster, ROMEntry.ImageType.Hero, ROMEntry.ImageType.Logo, ROMEntry.ImageType.Icon };
+				var imageExts = new[] {"png", "jpg", "jpeg"};
+				foreach (var imageType in imageTypes)
+				{
+					var imagePath = entry.GetImagePath(imageType);
+					if (imagePath == null)
+						continue;
+
+					if (!Path.IsPathRooted(imagePath))
+						imagePath = Path.Join(libraryDir, imagePath);
+
+					string? newImagePath = null;
+
+					var imageExists = File.Exists(imagePath);
+					if (!imageExists)
+					{
+						Console.WriteLine($"Can't find {imageType} image \"{imagePath}\"");
+
+						var imageExt = Path.GetExtension(imagePath);
+						foreach (var ext in imageExts.SkipWhile(e => e == imageExt))
+						{
+							var testImageExtPath = Path.ChangeExtension(imagePath, ext);
+							if (File.Exists(testImageExtPath))
+							{
+								newImagePath = Path.GetRelativePath(libraryDir, testImageExtPath).Replace("\\", "/");
+								break;
+							}
+						}
+					}
+
+					if (!string.IsNullOrEmpty(newImagePath))
+					{
+						Console.WriteLine($"Found {imageType} image as \"{Path.GetFileName(newImagePath)}\"");
+					}
+
+					if (fixLibrary && !imageExists && imagePath != newImagePath)
+					{
+						Console.WriteLine("Correcting library file");
+						entry.SetImagePath(imageType, newImagePath);
+					}
+				}
 			}
 
 			Console.WriteLine();
+		}
+
+		if (fixLibrary)
+		{
+			Console.WriteLine("Writing fixed library…");
+			library.Save(libraryPath);
+			Console.WriteLine("Done.");
 		}
 	}
 
@@ -253,7 +304,7 @@ internal class Librarian
 						throw new ArgumentException($"Entry {categoryName}->{entry.Name} does not point to a valid executable");
 				}
 
-				var imageTypes = Enum.GetValues<ROMEntry.ImageType>();
+				var imageTypes = new[] { ROMEntry.ImageType.Grid, ROMEntry.ImageType.Poster, ROMEntry.ImageType.Hero, ROMEntry.ImageType.Logo, ROMEntry.ImageType.Icon };
 				var iconPath = "";
 				foreach (var imageType in imageTypes)
 				{
