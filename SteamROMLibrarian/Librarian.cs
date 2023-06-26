@@ -115,13 +115,18 @@ internal class Librarian
 			foreach (var entry in category.Entries)
 			{
 				Console.Write($"--- {entry.Name}");
-				if (entry.NoRoot)
-					Console.WriteLine(" (no root)");
+				if (entry.Command != null)
+					Console.WriteLine(" (Command only)");
 				else
 				{
 					var entryPath = entry.Executable(category.RootDirectory, launcher);
-					if (!File.Exists(entryPath))
-						Console.WriteLine(" (NOT FOUND)");
+					var filePath = entry.FilePath(category.RootDirectory);
+
+					if (filePath != null && !File.Exists(filePath))
+					{
+						Console.Write(" (NOT FOUND)");
+						Console.WriteLine($" [{filePath}] ");
+					}
 					else
 						Console.WriteLine();
 

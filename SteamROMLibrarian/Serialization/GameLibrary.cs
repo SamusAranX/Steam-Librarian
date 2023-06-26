@@ -86,7 +86,6 @@ internal class ROMEntry : IJsonOnDeserialized
 
 	public string? Launcher { get; set; }
 	public string Name { get; set; }
-	public bool NoRoot { get; set; }
 	public string? Command { get; set; }
 	public string? Path { get; set; }
 	public bool VR { get; set; }
@@ -171,11 +170,34 @@ internal class ROMEntry : IJsonOnDeserialized
 		return $"{appIDStr}{suffix}.{ext}";
 	}
 
-	// if noRoot:
+	// if command:
 	// Launcher?.Executable + Launcher?.Arguments + Command? + Path?
 	// else:
 	// Launcher?.Executable + Launcher?.Arguments + Command? + (rootDirectory + Path)?
 
+	/// <summary>
+	/// Returns the full path to the file referenced by this entry, if any.
+	/// </summary>
+	/// <param name="rootDirectory">The launcher's root directory.</param>
+	/// <returns>The full path to the file referenced by this entry.</returns>
+	public string? FilePath(string? rootDirectory)
+	{
+		if (this.Command == null)
+		{
+			if (rootDirectory != null && this.Path != null)
+				return IOPath.Combine(rootDirectory, this.Path);
+		}
+
+		return this.Path;
+	}
+
+	/// <summary>
+	/// Builds a complete executable string for Steam's library.
+	/// </summary>
+	/// <param name="rootDirectory">The launcher's root directory.</param>
+	/// <param name="launcher">The <see cref="ROMLauncher"/> to be used for this entry.</param>
+	/// <returns>A complete executable string for Steam's library.</returns>
+	/// <exception cref="ArgumentException"></exception>
 	public string Executable(string? rootDirectory, ROMLauncher? launcher)
 	{
 		var argsList = new List<string>();
@@ -190,16 +212,9 @@ internal class ROMEntry : IJsonOnDeserialized
 		if (!string.IsNullOrWhiteSpace(this.Command))
 			argsList.Add(this.Command);
 
-		if (!this.NoRoot)
-		{
-			if (rootDirectory != null && this.Path != null)
-				argsList.Add($"\"{IOPath.Combine(rootDirectory, this.Path)}\"");
-		}
-		else if (this.Path != null)
-			argsList.Add($"\"{this.Path}\"");
-
-		if (argsList.Count == 0)
-			throw new ArgumentException($"Entry {this.Name} does not point to a valid executable");
+		var filePath = this.FilePath(rootDirectory);
+		if (!string.IsNullOrWhiteSpace(filePath))
+			argsList.Add($"\"{filePath}\"");
 
 		return string.Join(" ", argsList);
 	}
