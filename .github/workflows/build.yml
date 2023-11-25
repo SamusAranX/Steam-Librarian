@@ -39,5 +39,5 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: librarian-${{ matrix.profile }}.zip
-          path: ${{ github.workspace }}/SteamROMLibrarian/bin/Release/publish/${{ matrix.profile }}/*
+          path: ${{ github.workspace }}/SteamROMLibrarian/publish/${{ matrix.profile }}/*
           if-no-files-found: error

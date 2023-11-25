@@ -333,6 +333,7 @@ internal class Librarian
 					if (imageType == ROMEntry.ImageType.Icon)
 						iconPath = steamImagePath;
 
+					Directory.CreateDirectory(steamGridPath);
 					File.Copy(imagePath, steamImagePath, true);
 				}
 
