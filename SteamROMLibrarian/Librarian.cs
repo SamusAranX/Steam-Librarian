@@ -294,20 +294,7 @@ internal class Librarian
 				}
 
 				var exePath = entry.Executable(category.RootDirectory, launcher);
-
-				var startDir = "";
-				if (launcher != null)
-				{
-					startDir = new FileInfo(launcher.Executable).DirectoryName;
-					if (startDir == null)
-						throw new ArgumentException($"Launcher {launcherName} does not point to a valid executable");
-				}
-				else
-				{
-					startDir = new FileInfo(exePath).DirectoryName;
-					if (startDir == null)
-						throw new ArgumentException($"Entry {categoryName}->{entry.Name} does not point to a valid executable");
-				}
+				var startDir = entry.StartDir(category.RootDirectory, launcher);
 
 				var imageTypes = new[] { ROMEntry.ImageType.Grid, ROMEntry.ImageType.Poster, ROMEntry.ImageType.Hero, ROMEntry.ImageType.Logo, ROMEntry.ImageType.Icon };
 				var iconPath = "";
@@ -370,6 +357,9 @@ internal class Librarian
 		Console.WriteLine("Housekeeping completed.");
 		library.Save(libraryPath);
 
+#if DEBUG
+		Console.WriteLine("This is a Debug binary, not messing with the Steam library.");
+#else
 		if (File.Exists(steamShortcutsPath))
 		{
 			Console.WriteLine($"Creating backup at {steamShortcutsBackupPath}");
@@ -382,6 +372,7 @@ internal class Librarian
 		Console.WriteLine("Library written.");
 
 		Console.WriteLine("Restart Steam to reload your changes.");
+#endif
 	}
 
 	public static void WriteExampleLibrary()

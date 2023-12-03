@@ -192,12 +192,62 @@ internal class ROMEntry : IJsonOnDeserialized
 	}
 
 	/// <summary>
+	/// Builds a "Start In" string for Steam's library.
+	/// </summary>
+	/// <param name="rootDirectory">The launcher's root directory.</param>
+	/// <param name="launcher">An associated <see cref="ROMLauncher"/>, if any.</param>
+	/// <returns>A complete unquoted Start In string for Steam's library.</returns>
+	public string StartDir(string? rootDirectory, ROMLauncher? launcher)
+	{
+		string startDir;
+		if (launcher != null)
+		{
+			// there's a launcher specified, which means the rundir is most likely gonna be the launcher executable's directory
+			startDir = new FileInfo(launcher.Executable).DirectoryName!;
+			if (startDir == null)
+				throw new ArgumentException($"Launcher {this.Launcher} does not point to a valid executable");
+		}
+		else if (rootDirectory != null)
+		{
+			// there's no launcher but there's a category root, so this is probably a standalone binary.
+			// iterate up the file tree until we arrive at the first child dir of the category root.
+			// example:
+			// baba is you's binary is at /categoryroot/Baba Is You/bin64/Chowdren
+			// however, the game won't launch with a rundir that's not /categoryroot/Baba Is You
+
+			var rootDirectoryInfo = new DirectoryInfo(IOPath.GetFullPath(rootDirectory));
+			var startDirInfo = new FileInfo(this.FilePath(rootDirectory)!).Directory!;
+			
+			// good grief comparing directory paths in .net feels like banging rocks together caveman style
+			while (startDirInfo.Parent != null && IOPath.GetRelativePath(startDirInfo.Parent!.FullName, rootDirectoryInfo.FullName) != ".")
+			{
+				startDirInfo = startDirInfo.Parent;
+			}
+
+			startDir = startDirInfo.FullName;
+		}
+		else
+		{
+			try
+			{
+				var exePath = this.FilePath(rootDirectory);
+				startDir = new FileInfo(exePath).DirectoryName!;
+			}
+			catch (ArgumentNullException e)
+			{
+				throw new ArgumentException($"Entry does not point to a valid executable");
+			}
+		}
+
+		return startDir;
+	}
+
+	/// <summary>
 	/// Builds a complete executable string for Steam's library.
 	/// </summary>
 	/// <param name="rootDirectory">The launcher's root directory.</param>
 	/// <param name="launcher">The <see cref="ROMLauncher"/> to be used for this entry.</param>
-	/// <returns>A complete executable string for Steam's library.</returns>
-	/// <exception cref="ArgumentException"></exception>
+	/// <returns>A complete \"quoted\" executable string for Steam's library.</returns>
 	public string Executable(string? rootDirectory, ROMLauncher? launcher)
 	{
 		var argsList = new List<string>();
