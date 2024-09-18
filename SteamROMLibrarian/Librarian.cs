@@ -291,6 +291,9 @@ internal class Librarian
 						Console.WriteLine($"Custom launcher {launcherName} for entry {categoryName}->{entry.Name} is missing an executable path! Skipping entry");
 						continue;
 					}
+				} else
+				{
+					launcher = null;
 				}
 
 				var exePath = entry.Executable(category.RootDirectory, launcher);
