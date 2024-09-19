@@ -297,8 +297,6 @@ internal class Librarian
 					launcherName = null;
 				}
 
-				Console.WriteLine($"launcher: {launcherName} ({launcher?.Executable} {launcher?.Arguments})");
-
 				var imageTypes = new[] { ROMEntry.ImageType.Grid, ROMEntry.ImageType.Poster, ROMEntry.ImageType.Hero, ROMEntry.ImageType.Logo, ROMEntry.ImageType.Icon };
 				var iconPath = "";
 				foreach (var imageType in imageTypes)
@@ -341,8 +339,6 @@ internal class Librarian
 					if (!shortcutTags.Contains(categoryName))
 						shortcutTags.Add(categoryName);
 				}
-
-				Console.WriteLine($"launcher: {launcherName} ({launcher?.Executable} {launcher?.Arguments})");
 
 				var exePath = entry.Executable(category.RootDirectory, launcher);
 				var startDir = entry.StartDir(category.RootDirectory, launcher);
