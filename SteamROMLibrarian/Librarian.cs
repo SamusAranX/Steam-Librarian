@@ -291,13 +291,13 @@ internal class Librarian
 						Console.WriteLine($"Custom launcher {launcherName} for entry {categoryName}->{entry.Name} is missing an executable path! Skipping entry");
 						continue;
 					}
-				} else
+				} else if (entry.Launcher == null && category.DefaultLauncher == null)
 				{
 					launcher = null;
+					launcherName = null;
 				}
 
-				var exePath = entry.Executable(category.RootDirectory, launcher);
-				var startDir = entry.StartDir(category.RootDirectory, launcher);
+				Console.WriteLine($"launcher: {launcherName} ({launcher?.Executable} {launcher?.Arguments})");
 
 				var imageTypes = new[] { ROMEntry.ImageType.Grid, ROMEntry.ImageType.Poster, ROMEntry.ImageType.Hero, ROMEntry.ImageType.Logo, ROMEntry.ImageType.Icon };
 				var iconPath = "";
@@ -341,6 +341,11 @@ internal class Librarian
 					if (!shortcutTags.Contains(categoryName))
 						shortcutTags.Add(categoryName);
 				}
+
+				Console.WriteLine($"launcher: {launcherName} ({launcher?.Executable} {launcher?.Arguments})");
+
+				var exePath = entry.Executable(category.RootDirectory, launcher);
+				var startDir = entry.StartDir(category.RootDirectory, launcher);
 
 				var shortcut = new Shortcut
 				{

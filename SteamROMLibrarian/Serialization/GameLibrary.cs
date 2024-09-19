@@ -178,14 +178,19 @@ internal class ROMEntry : IJsonOnDeserialized
 	/// <summary>
 	/// Returns the full path to the file referenced by this entry, if any.
 	/// </summary>
-	/// <param name="rootDirectory">The launcher's root directory.</param>
+	/// <param name="rootDirectory">The category's root directory.</param>
 	/// <returns>The full path to the file referenced by this entry.</returns>
-	public string? FilePath(string? rootDirectory)
+	public string? FilePath(string? categoryRootDirectory)
 	{
 		if (this.Command == null)
 		{
-			if (rootDirectory != null && this.Path != null)
-				return IOPath.Combine(rootDirectory, this.Path);
+			if (IOPath.IsPathRooted(this.Path))
+			{
+				return this.Path;
+			}
+
+			if (categoryRootDirectory != null && this.Path != null)
+				return IOPath.Combine(categoryRootDirectory, this.Path);
 		}
 
 		return this.Path;
@@ -194,10 +199,10 @@ internal class ROMEntry : IJsonOnDeserialized
 	/// <summary>
 	/// Builds a "Start In" string for Steam's library.
 	/// </summary>
-	/// <param name="rootDirectory">The launcher's root directory.</param>
+	/// <param name="categoryRootDirectory">The category's root directory.</param>
 	/// <param name="launcher">An associated <see cref="ROMLauncher"/>, if any.</param>
 	/// <returns>A complete unquoted Start In string for Steam's library.</returns>
-	public string StartDir(string? rootDirectory, ROMLauncher? launcher)
+	public string StartDir(string? categoryRootDirectory, ROMLauncher? launcher)
 	{
 		string startDir;
 		if (launcher != null)
@@ -207,7 +212,7 @@ internal class ROMEntry : IJsonOnDeserialized
 			if (startDir == null)
 				throw new ArgumentException($"Launcher {this.Launcher} does not point to a valid executable");
 		}
-		else if (rootDirectory != null)
+		else if (categoryRootDirectory != null)
 		{
 			// there's no launcher but there's a category root, so this is probably a standalone binary.
 			// iterate up the file tree until we arrive at the first child dir of the category root.
@@ -215,8 +220,14 @@ internal class ROMEntry : IJsonOnDeserialized
 			// baba is you's binary is at /categoryroot/Baba Is You/bin64/Chowdren
 			// however, the game won't launch with a rundir that's not /categoryroot/Baba Is You
 
-			var rootDirectoryInfo = new DirectoryInfo(IOPath.GetFullPath(rootDirectory));
-			var startDirInfo = new FileInfo(this.FilePath(rootDirectory)!).Directory!;
+			// TODO: dirty fix
+			if (this.FilePath(categoryRootDirectory) == null)
+			{
+				return "";
+			}
+
+			var rootDirectoryInfo = new DirectoryInfo(IOPath.GetFullPath(categoryRootDirectory));
+			var startDirInfo = new FileInfo(this.FilePath(categoryRootDirectory)!).Directory!;
 			
 			// good grief comparing directory paths in .net feels like banging rocks together caveman style
 			while (startDirInfo.Parent != null && IOPath.GetRelativePath(startDirInfo.Parent!.FullName, rootDirectoryInfo.FullName) != ".")
@@ -230,10 +241,10 @@ internal class ROMEntry : IJsonOnDeserialized
 		{
 			try
 			{
-				var exePath = this.FilePath(rootDirectory);
+				var exePath = this.FilePath(categoryRootDirectory);
 				startDir = new FileInfo(exePath).DirectoryName!;
 			}
-			catch (ArgumentNullException e)
+			catch (ArgumentNullException)
 			{
 				throw new ArgumentException($"Entry does not point to a valid executable");
 			}
